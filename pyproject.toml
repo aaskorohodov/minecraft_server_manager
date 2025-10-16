@@ -1,0 +1,58 @@
+[tool.poetry]
+name = "minecraft_server_manager"
+version = "1"
+description = "Manager for Minecraft server to run on Windows"
+authors = ["DY <aaskorohodov@gmail.com>"]
+readme = "README.md"
+package-mode = false
+
+[tool.poetry.dependencies]
+python = "^3.12"
+pydantic-settings = "^2.10.1"
+infi-systray = "^0.1.12.1"
+pytelegrambotapi = "^4.29.1"
+psutil = "^7.1.0"
+loguru = "^0.7.3"
+
+[tool.poetry.group.tests.dependencies]
+pytest = "^8.2.1"
+
+
+[tool.ruff]
+line-length = 120
+
+[tool.ruff.lint]
+ignore = [
+  "D203",  # Indent from class declaration to docstring by 1 space
+  "D107",  # Public init methods without docstring
+  "D202",  # No indentation in methods/functions between the method code and the docstring (let indentation be there)
+  "D209",  # Closing triple quotes in docstring on new line
+  "D208",  # Prohibition of any indentation in docstring (for example, when there is a tab after Args)
+  "D410",  # Indentation after Args in DocStrings
+  "D411",  # Indent before Raises in DocStrings
+  "D415",  # Mandatory periods/questions/question marks at the end of the first line of docstring
+  "E722",  # Allow usage of bare exept
+  "D100",  # Missing docstring in inits
+  "D104",  # Missing docstring in public package
+  "E402"   # Module level import not at top of file
+]
+exclude = ["tests/*"]
+select = [
+  "E",   # pycodestyle
+  "F",   # pyflakes
+  "UP",  # pyupgrade
+  "D",   # pydocstyle
+]
+
+[tool.ruff.format]
+quote-style = "single"
+indent-style = "tab"
+docstring-code-format = true
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
