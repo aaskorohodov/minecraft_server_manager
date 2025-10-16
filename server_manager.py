@@ -12,13 +12,18 @@ from main_comm import MainComm
 
 
 class MinecraftServerManager:
+    """Manager for Minecraft Server"""
+
     def __init__(self,
                  main_comm: MainComm):
-        """Init"""
+        """Init
 
-        self.main_comm: MainComm = main_comm
-        self.proc: subprocess.Popen | None = None
-        self._running = False
+        Args:
+            main_comm: Instance of thread-communicator"""
+
+        self.main_comm: MainComm                = main_comm
+        self.proc:      subprocess.Popen | None = None
+        self._running:  bool                    = False
 
     def start_server(self):
         """Start Minecraft server"""
@@ -43,7 +48,7 @@ class MinecraftServerManager:
         logger.info("Server started")
 
     def stop_server(self):
-        """Gracefully stop the server."""
+        """Gracefully stop the server"""
 
         if self.proc and self.proc.stdin:
             logger.info("Sending stop command...")
@@ -109,9 +114,9 @@ class MinecraftServerManager:
 
         while self._running and not self.main_comm.stop_server:
             now = datetime.now().strftime("%H:%M")
-            if now == settings.STOP_TIME or self.main_comm.backup_now:
+            if now == settings.BACKUP_TIME or self.main_comm.backup_now:
                 self.main_comm.backup_now = False
-                logger.info(f"Reached stop time {settings.STOP_TIME}, restarting server...")
+                logger.info(f"Reached stop time {settings.BACKUP_TIME}, restarting server...")
                 try:
                     self.stop_server()
                     self.backup_world()

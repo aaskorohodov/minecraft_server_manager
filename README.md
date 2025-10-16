@@ -1,0 +1,1 @@
+Minimalistic Manager for Minecraft Sever, designed for Windows
