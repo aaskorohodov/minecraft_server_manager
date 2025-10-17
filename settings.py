@@ -1,5 +1,3 @@
-import os
-
 from loguru import logger
 from pprint import pformat
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -19,7 +17,10 @@ class Settings(BaseSettings):
         BACKUP_DIR: ABS-path to the folder where world-backups will be saved
         START_BAT: Path to start.bat file that launches Minecraft Server
         BACKUP_TIME: Time for backing up world as string  in format HH:mm
-        BACK_UP_DAYS: Backups, made more days ago, will be automatically deleted"""
+        BACK_UP_DAYS: Backups, made more days ago, will be automatically deleted
+
+        MIN_MEM: In case no START_BAT provided, will be used to set as minimum RAM for server
+        MAX_MEM: In case no START_BAT provided, will be used to set as maximum RAM for server"""
 
     model_config = SettingsConfigDict(env_file=(find_my_file(CONFIG_FILE_NAME)),
                                       extra='ignore')
@@ -31,25 +32,8 @@ class Settings(BaseSettings):
     BACKUP_TIME:  str = ''
     BACK_UP_DAYS: int = 5
 
-
-# Make sure the logs folder exists
-os.makedirs("logs", exist_ok=True)
-
-# Remove the default stderr logger
-logger.remove()
-
-# Add rotating file handler
-logger.add(
-    "logs/server_manager_{time:YYYY-MM-DD}.log",
-    rotation="00:00",       # create new log file every day at midnight
-    retention="100 days",    # keep logs for 10 days, delete older automatically
-    compression="zip",      # compress old logs
-    enqueue=True,           # thread-safe
-    encoding="utf-8"
-)
-
-# Optional: also log to console
-logger.add(lambda msg: print(msg, end=""), colorize=True)
+    MIN_MEM: int | None = None
+    MAX_MEM: int | None = None
 
 
 logger.info(f'Found config.env at: {find_my_file(CONFIG_FILE_NAME)}')

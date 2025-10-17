@@ -1,4 +1,5 @@
 import os
+import threading
 import time
 import shutil
 import zipfile
@@ -25,7 +26,51 @@ class MinecraftServerManager:
         self.proc:      subprocess.Popen | None = None
         self._running:  bool                    = False
 
-    def start_server(self):
+    def run(self):
+        """Main loop"""
+
+        self._running = True
+        self._start_server()
+
+        while self._running and not self.main_comm.stop_server:
+            if self._check_backup_triggers():
+                try:
+                    self._stop_server()
+                    self._backup_world()
+                    self._cleanup_old_backups()
+                    logger.info("Backup completed")
+                except Exception as e:
+                    self.main_comm.set_error(e.__str__())
+                    logger.error(f"Error during world backup: {e}")
+                    logger.exception(e)
+
+                try:
+                    self._start_server()
+                except Exception as e:
+                    logger.error(f'Fatal error on server restart: {e}')
+                    logger.exception(e)
+                    quit()
+            time.sleep(1)
+        self._stop()
+
+    def _check_backup_triggers(self) -> bool:
+        """Checks if any triggers for backing up world are present
+
+        Returns:
+            True if back up should be executed"""
+
+        now = datetime.now().strftime("%H:%M")
+        its_time_to_backup = now == settings.BACKUP_TIME
+        if its_time_to_backup or self.main_comm.backup_now_trigger:
+            if its_time_to_backup:
+                logger.info(f"Reached stop time {settings.BACKUP_TIME}, creating world backup and restarting server...")
+            else:
+                logger.info(f'Backup trigger activated, creating world backup and restarting server...')
+            self.main_comm.backup_now_trigger = False
+            return True
+        return False
+
+    def _start_server(self):
         """Start Minecraft server"""
 
         os.chdir(settings.SERVER_DIR)
@@ -39,15 +84,21 @@ class MinecraftServerManager:
         else:
             logger.info("Starting server directly...")
             self.proc = subprocess.Popen(
-                ["java", "-Xmx2G", "-Xms1G", "-jar", "server.jar"],
+                ["java",
+                 f"-Xmx{settings.MAX_MEM}G",
+                 f"-Xms{settings.MIN_MEM}G",
+                 "-jar",
+                 "server.jar"],
                 stdin=subprocess.PIPE,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
                 text=True
             )
+        time.sleep(10)
+        threading.Thread(target=self._read_server_output, daemon=True).start()
         logger.info("Server started")
 
-    def stop_server(self):
+    def _stop_server(self):
         """Gracefully stop the server"""
 
         if self.proc and self.proc.stdin:
@@ -59,7 +110,7 @@ class MinecraftServerManager:
         else:
             logger.info("Server process not running.")
 
-    def backup_world(self):
+    def _backup_world(self):
         """Copy and zip the world folder"""
 
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -78,7 +129,7 @@ class MinecraftServerManager:
         shutil.rmtree(temp_copy)
         logger.info(f"Backup completed: {zip_path}")
 
-    def cleanup_old_backups(self):
+    def _cleanup_old_backups(self):
         """Remove .zip backups older than given number of days"""
 
         now = datetime.now()
@@ -106,35 +157,19 @@ class MinecraftServerManager:
         else:
             logger.info(f"[{datetime.now()}] No old backups found for deletion.")
 
-    def run(self):
-        """Main loop"""
-
-        self._running = True
-        self.start_server()
-
-        while self._running and not self.main_comm.stop_server:
-            now = datetime.now().strftime("%H:%M")
-            if now == settings.BACKUP_TIME or self.main_comm.backup_now:
-                self.main_comm.backup_now = False
-                logger.info(f"Reached stop time {settings.BACKUP_TIME}, restarting server...")
-                try:
-                    self.stop_server()
-                    self.backup_world()
-                    self.cleanup_old_backups()
-                    self.start_server()
-                    logger.info("Server restarted")
-                except Exception as e:
-                    self.main_comm.set_error(e.__str__())
-                    logger.error(f"Error during restart: {e}")
-                    logger.exception(e)
-            time.sleep(1)
-
-        self.stop()
-
-    def stop(self):
+    def _stop(self):
         """Stop the manager thread and server"""
 
         logger.info("Stopping manager...")
         self._running = False
-        self.stop_server()
+        self._stop_server()
         logger.info("Manager stopped")
+
+    def _read_server_output(self):
+        """Continuously read Minecraft server output"""
+
+        assert self.proc is not None, "Process not started"
+        for line in self.proc.stdout:
+            if line.strip():  # skip empty lines
+                logger.opt(colors=True).info(f"<green>[MINECRAFT]</green> {line.strip()}")
+        logger.info("Minecraft output reader finished (process closed).")

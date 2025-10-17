@@ -12,7 +12,7 @@ class MainComm:
     def __init__(self):
         """Init"""
 
-        self.backup_now:     bool = False
+        self.backup_now_trigger:     bool = False
         self.trayer_running: bool = True
         self.errors:         str  = 'All good!'
         self.stop_server:    bool = False

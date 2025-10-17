@@ -1,15 +1,8 @@
-import threading
-import time
-
-from main_comm import MainComm
-from server_manager import MinecraftServerManager
-from trayer.trayer import Trayer
+from app_initializer import AppInitializer
 
 
-main_comm = MainComm()
-Trayer(main_comm)
-server_manager = MinecraftServerManager(main_comm)
-threading.Thread(target=server_manager.run, daemon=True).start()
-
-while main_comm.trayer_running:
-    time.sleep(1)
+initializer = AppInitializer()
+initializer.check_settings()
+initializer.init_logger()
+initializer.init_components()
+initializer.run_indefinitely()

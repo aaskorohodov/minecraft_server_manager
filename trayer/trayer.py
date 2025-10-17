@@ -112,7 +112,7 @@ class Trayer(SysTrayIcon):
     def _back_up(self, _: traybar.SysTrayIcon) -> None:
         """Sends signal for back up world now"""
 
-        self.main_comm.backup_now = True
+        self.main_comm.backup_now_trigger = True
 
     def _make_menu_options(self) -> None:
         """Makes menu for Trayer"""
