@@ -171,5 +171,10 @@ class MinecraftServerManager:
         assert self.proc is not None, "Process not started"
         for line in self.proc.stdout:
             if line.strip():  # skip empty lines
-                logger.opt(colors=True).info(f"<green>[MINECRAFT]</green> {line.strip()}")
+                try:
+                    safe_line = line.replace("<", "\\<").replace(">", "\\>")
+                    # Add your colored prefix
+                    logger.opt(colors=True).info(f"<green>[MINECRAFT]</green> {safe_line.strip()}")
+                except Exception as e:
+                    logger.exception(e)
         logger.info("Minecraft output reader finished (process closed).")
