@@ -1,4 +1,4 @@
-from app_initializer import AppInitializer
+from initializer.app_initializer import AppInitializer
 
 
 initializer = AppInitializer()
