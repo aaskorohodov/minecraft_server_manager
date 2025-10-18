@@ -29,8 +29,6 @@ class MinecraftServerManager:
         self.proc:      subprocess.Popen | None = None
         self._running:  bool                    = False
 
-        LogoPrinter.print_logo()
-
     def run(self) -> None:
         """Main loop"""
 
@@ -54,6 +52,8 @@ class MinecraftServerManager:
                 except Exception as e:
                     logger.error(f'Fatal error on server restart: {e}')
                     logger.exception(e)
+                    self._stop()
+                    time.sleep(10)
                     quit()
             time.sleep(1)
         self._stop()
@@ -77,6 +77,8 @@ class MinecraftServerManager:
 
     def _start_server(self) -> None:
         """Start Minecraft server"""
+
+        LogoPrinter.print_logo()
 
         os.chdir(settings.SERVER_DIR)
         if settings.START_BAT:
