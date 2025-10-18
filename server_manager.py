@@ -1,17 +1,18 @@
 import os
-import threading
 import time
 import shutil
 import zipfile
+import threading
 import subprocess
 
+from tqdm import tqdm
 from loguru import logger
 from datetime import datetime, timedelta
 
-from tqdm import tqdm
 
 from settings import settings
 from main_comm import MainComm
+from initializer.logo_printer import LogoPrinter
 
 
 class MinecraftServerManager:
@@ -27,6 +28,8 @@ class MinecraftServerManager:
         self.main_comm: MainComm                = main_comm
         self.proc:      subprocess.Popen | None = None
         self._running:  bool                    = False
+
+        LogoPrinter.print_logo()
 
     def run(self) -> None:
         """Main loop"""

@@ -1,11 +1,9 @@
 import os
-import random
 import time
 import threading
 
 from loguru import logger
 
-from initializer.start_logos import START_LOGOS
 from main_comm import MainComm
 from settings import settings
 from trayer.trayer import Trayer
@@ -19,15 +17,6 @@ class AppInitializer:
         """Init"""
 
         self.main_comm: MainComm = MainComm()
-        self._print_logo()
-
-    def _print_logo(self) -> None:
-        """Print start logo"""
-
-        start_logo = random.choice(START_LOGOS)
-        for line in start_logo.splitlines():
-            print(line)
-            time.sleep(0.05)
 
     def check_settings(self) -> None:
         """Checks if server-start settings provided as expected
