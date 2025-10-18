@@ -8,6 +8,8 @@ import subprocess
 from loguru import logger
 from datetime import datetime, timedelta
 
+from tqdm import tqdm
+
 from settings import settings
 from main_comm import MainComm
 
@@ -26,7 +28,7 @@ class MinecraftServerManager:
         self.proc:      subprocess.Popen | None = None
         self._running:  bool                    = False
 
-    def run(self):
+    def run(self) -> None:
         """Main loop"""
 
         self._running = True
@@ -70,7 +72,7 @@ class MinecraftServerManager:
             return True
         return False
 
-    def _start_server(self):
+    def _start_server(self) -> None:
         """Start Minecraft server"""
 
         os.chdir(settings.SERVER_DIR)
@@ -98,7 +100,7 @@ class MinecraftServerManager:
         threading.Thread(target=self._read_server_output, daemon=True).start()
         logger.info("Server started")
 
-    def _stop_server(self):
+    def _stop_server(self) -> None:
         """Gracefully stop the server"""
 
         if self.proc and self.proc.stdin:
@@ -110,7 +112,7 @@ class MinecraftServerManager:
         else:
             logger.info("Server process not running.")
 
-    def _backup_world(self):
+    def _backup_world(self) -> None:
         """Copy and zip the world folder"""
 
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -120,16 +122,36 @@ class MinecraftServerManager:
         logger.info(f"Copying world folder to {temp_copy}...")
         shutil.copytree(settings.WORLD_DIR, temp_copy)
         logger.info("Zipping backup...")
-        with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
-            for root, dirs, files in os.walk(temp_copy):
-                for file in files:
-                    abs_path = os.path.join(root, file)
-                    rel_path = os.path.relpath(abs_path, temp_copy)
-                    zipf.write(abs_path, rel_path)
+
+        self._zeep_world(temp_copy, zip_path)
+
         shutil.rmtree(temp_copy)
         logger.info(f"Backup completed: {zip_path}")
 
-    def _cleanup_old_backups(self):
+    def _zeep_world(self,
+                    temp_copy: str,
+                    zip_path: str) -> None:
+        """Zips world with progress status
+
+        Args:
+            temp_copy: ABS-path to world-copy folder to zip
+            zip_path: ABS-path to where zipped folder will be saved"""
+
+        # Collect all files
+        all_files = []
+        for root, _, files in os.walk(temp_copy):
+            for f in files:
+                all_files.append(os.path.join(root, f))
+
+        with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zipf, tqdm(
+                total=len(all_files), unit="files", desc="Zipping world"
+        ) as pbar:
+            for abs_path in all_files:
+                rel_path = os.path.relpath(abs_path, temp_copy)
+                zipf.write(abs_path, rel_path)
+                pbar.update(1)
+
+    def _cleanup_old_backups(self) -> None:
         """Remove .zip backups older than given number of days"""
 
         now = datetime.now()
@@ -157,7 +179,7 @@ class MinecraftServerManager:
         else:
             logger.info(f"[{datetime.now()}] No old backups found for deletion.")
 
-    def _stop(self):
+    def _stop(self) -> None:
         """Stop the manager thread and server"""
 
         logger.info("Stopping manager...")
@@ -165,7 +187,7 @@ class MinecraftServerManager:
         self._stop_server()
         logger.info("Manager stopped")
 
-    def _read_server_output(self):
+    def _read_server_output(self) -> None:
         """Continuously read Minecraft server output"""
 
         assert self.proc is not None, "Process not started"
