@@ -25,13 +25,8 @@ class AppInitializer:
         """Print start logo"""
 
         start_logo = random.choice(START_LOGOS)
-        from rich.console import Console
-        console = Console(force_terminal=True)
         for line in start_logo.splitlines():
-            # Print the line
-            console.print(line)
-
-            # Pause the program
+            print(line)
             time.sleep(0.05)
 
     def check_settings(self) -> None:

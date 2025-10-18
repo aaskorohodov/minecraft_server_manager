@@ -42,4 +42,4 @@ settings = Settings(
     _env_file_encoding='utf-8'
 )
 models_representation: dict[str, any] = settings.model_dump()
-logger.info(f'Настройки загружены:\n{pformat(models_representation)}')
+logger.info(f'Settings loaded:\n{pformat(models_representation)}')
