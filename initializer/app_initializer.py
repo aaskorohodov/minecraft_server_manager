@@ -25,10 +25,11 @@ class AppInitializer:
         """Print start logo"""
 
         start_logo = random.choice(START_LOGOS)
-
+        from rich.console import Console
+        console = Console(force_terminal=True)
         for line in start_logo.splitlines():
             # Print the line
-            print(line)
+            console.print(line)
 
             # Pause the program
             time.sleep(0.05)
