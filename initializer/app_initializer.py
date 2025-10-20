@@ -75,3 +75,7 @@ class AppInitializer:
 
         while self.main_comm.trayer_running:
             time.sleep(1)
+            if self.main_comm.draw_plot_trigger:
+                time.sleep(2)
+                self.main_comm.draw_plot_trigger = False
+                DownDetector.draw_data()

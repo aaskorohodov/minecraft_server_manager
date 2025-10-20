@@ -30,10 +30,11 @@ class Trayer(SysTrayIcon):
         Args:
             main_comm: Tread-communicator"""
 
-        self.logo_main:    str = ''
-        self.logo_info:    str = ''
-        self.logo_restart: str = ''
-        self.logo_backup:  str = ''
+        self.logo_main:     str = ''
+        self.logo_info:     str = ''
+        self.logo_restart:  str = ''
+        self.logo_backup:   str = ''
+        self.logo_net_stat: str = ''
         self._make_logos()
 
         self.menu_options: Optional[tuple[tuple[str, str, ()]]] = None
@@ -58,7 +59,8 @@ class Trayer(SysTrayIcon):
                                               daemon=True)
         show_status_thread.start()
 
-    def restart(self, _: traybar.SysTrayIcon) -> None:
+    def restart(self,
+                _: traybar.SysTrayIcon) -> None:
         """Button 'Restart' action.
 
         Args:
@@ -101,18 +103,29 @@ class Trayer(SysTrayIcon):
         """Saves paths to icons"""
 
         current_file_path = os.path.abspath(__file__)
-        trayer_dir = os.path.dirname(current_file_path)
-        project_dir = os.path.dirname(trayer_dir)
+        trayer_dir        = os.path.dirname(current_file_path)
+        project_dir       = os.path.dirname(trayer_dir)
 
-        self.logo_main = os.path.join(project_dir, 'media/main_logo.ico')
-        self.logo_info = os.path.join(project_dir, 'media/info.ico')
-        self.logo_restart = os.path.join(project_dir, 'media/restart.ico')
-        self.logo_backup = os.path.join(project_dir, 'media/backup.ico')
+        self.logo_main     = os.path.join(project_dir, 'media/main_logo.ico')
+        self.logo_info     = os.path.join(project_dir, 'media/info.ico')
+        self.logo_restart  = os.path.join(project_dir, 'media/restart.ico')
+        self.logo_backup   = os.path.join(project_dir, 'media/backup.ico')
+        self.logo_net_stat = os.path.join(project_dir, 'media/network_status.ico')
 
-    def _back_up(self, _: traybar.SysTrayIcon) -> None:
+    def _back_up(self,
+                 _: traybar.SysTrayIcon) -> None:
         """Sends signal for back up world now"""
 
         self.main_comm.backup_now_trigger = True
+
+    def _draw_network_status(self,
+                             _: traybar.SysTrayIcon) -> None:
+        """Button 'Network Status' action.
+
+        Args:
+            _: being provided by systray"""
+
+        self.main_comm.draw_plot_trigger = True
 
     def _make_menu_options(self) -> None:
         """Makes menu for Trayer"""
@@ -121,5 +134,6 @@ class Trayer(SysTrayIcon):
         self.menu_options = (
             ("Info", self.logo_info, self.show_status),
             ("Restart", self.logo_restart, self.restart),
-            ("BackUp", self.logo_backup, self._back_up)
+            ("BackUp", self.logo_backup, self._back_up),
+            ("NetStat", self.logo_net_stat, self._draw_network_status)
         )

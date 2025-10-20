@@ -2,6 +2,8 @@ import os
 import time
 import sqlite3
 import datetime
+import threading
+
 import requests
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -28,6 +30,7 @@ class DownDetector:
         self._cursor = self._conn.cursor()
 
         self._init_db()
+        threading.Thread(target=self._check_plot_trigger_loop, daemon=True).start()
 
     def _init_db(self) -> None:
         """Creates a table for internet stability test"""
@@ -70,7 +73,9 @@ class DownDetector:
             (datetime.datetime.now().isoformat(), status)
         )
         self._conn.commit()
-        logger.info(f"Recorded status: {status}")
+        logger.opt(colors=True).info(
+            f"<yellow>[DOWN DETECTOR]</yellow> Recorded status: {status}"
+        )
 
     def monitor(self,
                 interval=10) -> None:
@@ -96,7 +101,9 @@ class DownDetector:
                     # If we are coming back online, calculate downtime
                     if last_status == "offline" and status == "online":
                         downtime = (datetime.datetime.now() - last_change_time).total_seconds()
-                        logger.warning(f"Offline for {downtime:.1f} seconds")
+                        logger.opt(colors=True).warning(
+                            f"<yellow>[DOWN DETECTOR]</yellow> Offline for {downtime:.1f} seconds"
+                        )
 
                     # Record the status change
                     self._record_status(status)
@@ -114,6 +121,14 @@ class DownDetector:
 
         self._conn.close()
 
+    def _check_plot_trigger_loop(self) -> None:
+        """Checks if User pressed button in tray and requested plot"""
+
+        while self.main_comm.trayer_running:
+            if self.main_comm.draw_plot_trigger:
+                self._record_status(self._get_status())
+            time.sleep(1)
+
     def _get_status(self) -> str:
         """Makes HTTP-request and returns status as string
 
@@ -123,38 +138,38 @@ class DownDetector:
         status = "online" if self._is_online() else "offline"
         return status
 
+    @staticmethod
+    def draw_data() -> None:
+        """Draws collected downtime"""
 
-def draw_data() -> None:
-    """Draws collected downtime"""
+        root_folder = os.path.dirname(os.path.dirname(__file__))
+        os.chdir(root_folder)
+        df = pd.read_sql_query(
+            "SELECT * FROM connectivity ORDER BY timestamp",
+            sqlite3.connect(settings.DB_PATH)
+        )
+        df['timestamp'] = pd.to_datetime(df['timestamp'])
 
-    root_folder = os.path.dirname(os.path.dirname(__file__))
-    os.chdir(root_folder)
-    df = pd.read_sql_query(
-        "SELECT * FROM connectivity ORDER BY timestamp",
-        sqlite3.connect(settings.DB_PATH)
-    )
-    df['timestamp'] = pd.to_datetime(df['timestamp'])
+        if len(df) < 2:
+            print("Not enough data to plot.")
+            return
 
-    if len(df) < 2:
-        print("Not enough data to plot.")
-        return
+        # Calculate uptime %
+        uptime = (df['status'] == 'online').sum() / len(df)
+        print(f"Uptime: {uptime:.2%}")
 
-    # Calculate uptime %
-    uptime = (df['status'] == 'online').sum() / len(df)
-    print(f"Uptime: {uptime:.2%}")
+        # Plot timeline with colored segments
+        plt.figure(figsize=(10, 2))
+        for i in range(1, len(df)):
+            color = 'green' if df.loc[i - 1, 'status'] == 'online' else 'red'
+            plt.plot(df['timestamp'].iloc[i-1:i+1], [1, 1], color=color, linewidth=3)
 
-    # Plot timeline with colored segments
-    plt.figure(figsize=(10, 2))
-    for i in range(1, len(df)):
-        color = 'green' if df.loc[i - 1, 'status'] == 'online' else 'red'
-        plt.plot(df['timestamp'].iloc[i-1:i+1], [1, 1], color=color, linewidth=3)
-
-    plt.yticks([])
-    plt.title("Internet Connectivity Timeline")
-    plt.xlabel("Time")
-    plt.tight_layout()
-    plt.show()
+        plt.yticks([])
+        plt.title("Internet Connectivity Timeline")
+        plt.xlabel("Time")
+        plt.tight_layout()
+        plt.show()
 
 
 if __name__ == '__main__':
-    draw_data()
+    DownDetector.draw_data()
