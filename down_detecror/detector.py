@@ -108,9 +108,9 @@ class DownDetector:
             except Exception as e:
                 logger.exception(e)
                 time.sleep(interval)
-            finally:
-                if status:
-                    self._record_status(status)
+
+        if status:
+            self._record_status(status)
 
         self._conn.close()
 
