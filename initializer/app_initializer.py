@@ -4,6 +4,7 @@ import threading
 
 from loguru import logger
 
+from down_detecror.detector import DownDetector
 from main_comm import MainComm
 from settings import settings
 from trayer.trayer import Trayer
@@ -60,6 +61,14 @@ class AppInitializer:
         server_manager = MinecraftServerManager(self.main_comm)
         threading.Thread(target=server_manager.run,
                          daemon=True).start()
+
+        if settings.DETECTOR_ON:
+            logger.info('Launching down-detector')
+            down_detector  = DownDetector(self.main_comm)
+            threading.Thread(target=down_detector.monitor,
+                             daemon=True).start()
+        else:
+            logger.info('Running without down-detector')
 
     def run_indefinitely(self) -> None:
         """Loop to let app run"""

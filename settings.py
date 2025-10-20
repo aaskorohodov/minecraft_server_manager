@@ -20,7 +20,12 @@ class Settings(BaseSettings):
         BACK_UP_DAYS: Backups, made more days ago, will be automatically deleted
 
         MIN_MEM: In case no START_BAT provided, will be used to set as minimum RAM for server
-        MAX_MEM: In case no START_BAT provided, will be used to set as maximum RAM for server"""
+        MAX_MEM: In case no START_BAT provided, will be used to set as maximum RAM for server
+
+        DB_PATH: ABS-Path to DB that will be created locally for app's data
+
+        CONNECTIVITY_URLS: URLS to check network with (will be pinged)
+        DETECTOR_ON: If down-detector should be launched"""
 
     model_config = SettingsConfigDict(env_file=(find_my_file(CONFIG_FILE_NAME)),
                                       extra='ignore')
@@ -34,6 +39,16 @@ class Settings(BaseSettings):
 
     MIN_MEM: int | None = None
     MAX_MEM: int | None = None
+
+    DB_PATH: str = "my_shiny.db"
+
+    CONNECTIVITY_URLS: list[str] = [
+        "https://www.google.com",
+        "https://1.1.1.1",
+        "https://example.com",
+        "https://www.wikipedia.org"
+    ]
+    DETECTOR_ON: bool = True
 
 
 logger.info(f'Found config.env at: {find_my_file(CONFIG_FILE_NAME)}')
