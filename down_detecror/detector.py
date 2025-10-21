@@ -1,5 +1,7 @@
 import os
 import time
+import copy
+import random
 import sqlite3
 import datetime
 import threading
@@ -53,7 +55,9 @@ class DownDetector:
         Returns:
             True, in case internet works"""
 
-        for url in settings.CONNECTIVITY_URLS:
+        urls = copy.copy(settings.CONNECTIVITY_URLS)
+        random.shuffle(urls)
+        for url in urls:
             try:
                 requests.get(url, timeout=timeout)
                 return True

@@ -46,7 +46,13 @@ class Settings(BaseSettings):
         "https://www.google.com",
         "https://1.1.1.1",
         "https://example.com",
-        "https://www.wikipedia.org"
+        "https://www.wikipedia.org",
+        "https://www.python.org/",
+        "https://www.bing.com/",
+        "https://duckduckgo.com/",
+        "https://www.amazon.com/",
+        "https://www.wikipedia.org/",
+        "https://pingmydomain.blogspot.com/"
     ]
     DETECTOR_ON: bool = True
 
