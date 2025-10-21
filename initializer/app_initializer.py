@@ -79,3 +79,6 @@ class AppInitializer:
                 time.sleep(2)
                 self.main_comm.draw_plot_trigger = False
                 DownDetector.draw_data()
+
+        time.sleep(5)
+        quit()
