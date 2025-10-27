@@ -37,7 +37,7 @@ class DownDetector:
             CREATE TABLE IF NOT EXISTS connectivity (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 timestamp TEXT NOT NULL,
-                status TEXT NOT NULL CHECK (status IN ('online', 'offline'))
+                status TEXT NOT NULL CHECK (status IN ('online', 'offline', 'off'))
             )
         """)
         self._conn.commit()
@@ -116,9 +116,6 @@ class DownDetector:
                 logger.exception(e)
                 time.sleep(interval)
 
-        if status:
-            self._record_status(status)
-
         self._conn.close()
 
     def _check_triggers_loop(self) -> None:
@@ -130,9 +127,14 @@ class DownDetector:
             if self.main_comm.record_net_stat_trigger:
                 self._record_status(self._get_status())
                 self.main_comm.record_net_stat_trigger = False
+            if self.main_comm.backup_now_trigger:
+                self._record_status('off')
+                while self.main_comm.backup_now_trigger:
+                    time.sleep(1)
+                self._record_status(self._get_status())
             time.sleep(1)
 
-        self._record_status(self._get_status())
+        self._record_status('off')
 
     def _get_status(self) -> str:
         """Makes HTTP-request and returns status as string

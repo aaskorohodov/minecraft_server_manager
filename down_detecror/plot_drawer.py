@@ -151,6 +151,8 @@ class PlotDrawer:
             status = df_24h.loc[i - 1, 'status']
             if status == 'online':
                 color = 'green'
+            elif status == 'off':
+                color = 'gray'
             else:
                 color = 'red'
 

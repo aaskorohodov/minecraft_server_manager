@@ -55,6 +55,7 @@ class MinecraftServerManager:
                     self._stop()
                     time.sleep(10)
                     quit()
+                self.main_comm.backup_now_trigger = False
             time.sleep(1)
         self._stop()
 
@@ -71,7 +72,6 @@ class MinecraftServerManager:
                 logger.info(f"Reached stop time {settings.BACKUP_TIME}, creating world backup and restarting server...")
             else:
                 logger.info(f'Backup trigger activated, creating world backup and restarting server...')
-            self.main_comm.backup_now_trigger      = False
             self.main_comm.record_net_stat_trigger = True
             return True
         return False
