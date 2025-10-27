@@ -107,11 +107,10 @@ class PlotDrawer:
             all_records_earlier_24_hours: Records, made more than 24 hours ago
             df_net_status: All records from DB
         Returns:
-            Earliest status, either earliest from records made more than 24 hours ago, or last known overall"""
+            Earliest status, either earliest from records made more than 24 hours ago, or off-status"""
 
         if all_records_earlier_24_hours.empty:
-            first_known_status = df_net_status.iloc[0]['status']
-            start_status       = first_known_status
+            start_status       = 'off'
         else:
             last_record_earlier_than_24_hours = all_records_earlier_24_hours.iloc[-1]
             start_status = last_record_earlier_than_24_hours['status']
