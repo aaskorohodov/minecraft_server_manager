@@ -4,10 +4,11 @@ import threading
 
 from loguru import logger
 
-from down_detecror.detector import DownDetector
-from main_comm import MainComm
 from settings import settings
+from main_comm import MainComm
 from trayer.trayer import Trayer
+from down_detecror.detector import DownDetector
+from down_detecror.plot_drawer import PlotDrawer
 from server_manager import MinecraftServerManager
 
 
@@ -75,10 +76,15 @@ class AppInitializer:
 
         while self.main_comm.trayer_running:
             time.sleep(1)
-            if self.main_comm.draw_plot_trigger:
-                time.sleep(2)
-                self.main_comm.draw_plot_trigger = False
-                DownDetector.draw_data()
+            self._check_plot_trigger()
 
         time.sleep(5)
         quit()
+
+    def _check_plot_trigger(self) -> None:
+        """Checks if trigger to draw plot was activated. Draws plot if trigger is on"""
+
+        if self.main_comm.draw_plot_trigger:
+            time.sleep(2)
+            self.main_comm.draw_plot_trigger = False
+            PlotDrawer.draw_data_24h()

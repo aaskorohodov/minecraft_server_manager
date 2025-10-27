@@ -1,14 +1,10 @@
-import os
 import time
 import copy
 import random
 import sqlite3
 import datetime
-import threading
-
 import requests
-import pandas as pd
-import matplotlib.pyplot as plt
+import threading
 
 from loguru import logger
 
@@ -141,39 +137,3 @@ class DownDetector:
 
         status = "online" if self._is_online() else "offline"
         return status
-
-    @staticmethod
-    def draw_data() -> None:
-        """Draws collected downtime"""
-
-        root_folder = os.path.dirname(os.path.dirname(__file__))
-        os.chdir(root_folder)
-        df = pd.read_sql_query(
-            "SELECT * FROM connectivity ORDER BY timestamp",
-            sqlite3.connect(settings.DB_PATH)
-        )
-        df['timestamp'] = pd.to_datetime(df['timestamp'])
-
-        if len(df) < 2:
-            print("Not enough data to plot.")
-            return
-
-        # Calculate uptime %
-        uptime = (df['status'] == 'online').sum() / len(df)
-        print(f"Uptime: {uptime:.2%}")
-
-        # Plot timeline with colored segments
-        plt.figure(figsize=(10, 2))
-        for i in range(1, len(df)):
-            color = 'green' if df.loc[i - 1, 'status'] == 'online' else 'red'
-            plt.plot(df['timestamp'].iloc[i-1:i+1], [1, 1], color=color, linewidth=3)
-
-        plt.yticks([])
-        plt.title("Internet Connectivity Timeline")
-        plt.xlabel("Time")
-        plt.tight_layout()
-        plt.show()
-
-
-if __name__ == '__main__':
-    DownDetector.draw_data()
