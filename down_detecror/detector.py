@@ -28,7 +28,7 @@ class DownDetector:
         self._cursor = self._conn.cursor()
 
         self._init_db()
-        threading.Thread(target=self._check_plot_trigger_loop, daemon=True).start()
+        threading.Thread(target=self._check_triggers_loop, daemon=True).start()
 
     def _init_db(self) -> None:
         """Creates a table for internet stability test"""
@@ -121,13 +121,18 @@ class DownDetector:
 
         self._conn.close()
 
-    def _check_plot_trigger_loop(self) -> None:
-        """Checks if User pressed button in tray and requested plot"""
+    def _check_triggers_loop(self) -> None:
+        """Checks if User pressed button in tray and requested plot, or if status should be recorded now"""
 
         while self.main_comm.trayer_running:
             if self.main_comm.draw_plot_trigger:
                 self._record_status(self._get_status())
+            if self.main_comm.record_net_stat_trigger:
+                self._record_status(self._get_status())
+                self.main_comm.record_net_stat_trigger = False
             time.sleep(1)
+
+        self._record_status(self._get_status())
 
     def _get_status(self) -> str:
         """Makes HTTP-request and returns status as string
