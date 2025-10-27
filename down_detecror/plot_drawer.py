@@ -77,8 +77,7 @@ class PlotDrawer:
         all_records_earlier_24_hours = df_net_status[df_net_status['timestamp'] < cutoff_24_hours_ago]
         all_records_within_24_hours  = df_net_status[df_net_status['timestamp'] >= cutoff_24_hours_ago]
 
-        start_status = PlotDrawer._extract_starting_status(all_records_earlier_24_hours,
-                                                           df_net_status)
+        start_status = PlotDrawer._extract_starting_status(all_records_earlier_24_hours)
 
         # Add synthetic start record (exactly 24 hours ago)
         start_record = pd.DataFrame([{
@@ -99,13 +98,11 @@ class PlotDrawer:
         return df_24h
 
     @staticmethod
-    def _extract_starting_status(all_records_earlier_24_hours: pd.Series,
-                                 df_net_status: pd.DataFrame) -> str:
+    def _extract_starting_status(all_records_earlier_24_hours: pd.Series) -> str:
         """Finds starting status
 
         Args:
             all_records_earlier_24_hours: Records, made more than 24 hours ago
-            df_net_status: All records from DB
         Returns:
             Earliest status, either earliest from records made more than 24 hours ago, or off-status"""
 
@@ -167,9 +164,9 @@ class PlotDrawer:
         Returns:
             Percentage of uptime in current records"""
 
-        total_segments = len(df_24h) - 1
+        total_segments  = len(df_24h) - 1
         online_segments = sum(df_24h.iloc[i - 1]['status'] == 'online' for i in range(1, len(df_24h)))
-        uptime_percent = online_segments / total_segments
+        uptime_percent  = online_segments / total_segments
 
         return uptime_percent
 
