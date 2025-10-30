@@ -5,6 +5,8 @@ import traceback
 from pathlib import Path
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
+from loguru import logger
+
 try:
     parent = str(Path(__file__).resolve().parents[1])
     print(parent)
@@ -74,7 +76,7 @@ class SafeFileReceiver(BaseHTTPRequestHandler):
         """Post request handler"""
 
         try:
-            print('Upload started')
+            logger.info('Upload started')
             if not self._check_token():
                 return
 
@@ -99,6 +101,7 @@ class SafeFileReceiver(BaseHTTPRequestHandler):
             )
 
         except Exception as ex:
+            logger.exception(ex)
             traceback.print_exc()
             self._send_error(500, f"Internal server error: {ex}")
 
@@ -122,17 +125,23 @@ class SafeFileReceiver(BaseHTTPRequestHandler):
             code: Error code to send
             message: Message in body"""
 
-        print(f'Sending error with code {code}')
+        logger.info(f'Sending error with code {code}')
         self.send_response(code)
         self.end_headers()
         self.wfile.write(message.encode())
 
 
 def main():
-    print('Receiver running...')
+    log_file = os.path.join(os.getcwd(), "receiver.log")
+    sys.stdout = open(log_file, "a", buffering=1)
+    sys.stderr = open(log_file, "a", buffering=1)
+    logger.remove()  # remove default sink (stdout)
+    logger.add(log_file, rotation="10 MB", retention="5 days", enqueue=True, backtrace=True, diagnose=True)
+
+    logger.info('Receiver running...')
     # noinspection PyTypeChecker
     server = HTTPServer(('0.0.0.0', settings.RECEIVER_PORT), SafeFileReceiver)
-    print(f"Receiver running on port {settings.RECEIVER_PORT}...")
+    logger.info(f"Receiver running on port {settings.RECEIVER_PORT}...")
     server.serve_forever()
 
 
