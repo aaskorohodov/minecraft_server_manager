@@ -169,7 +169,7 @@ class MinecraftServerManager:
                      file_path: str) -> None:
         """Send world backup over HTTP"""
 
-        attempt = 1
+        attempt = 0
         sent    = False
         sender  = HttpFileSender(file_path)
         while attempt < settings.SEND_ATTEMPTS + 1 and not sent:
