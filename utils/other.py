@@ -14,7 +14,6 @@ def find_my_file(file_to_find_name: str,
         Path to file or empty string"""
 
     current_dir = os.path.abspath(start_dir)
-    print(current_dir)
 
     while True:
         # Walk through current_dir and its subdirectories
