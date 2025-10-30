@@ -7,7 +7,6 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 
 try:
     parent = str(Path(__file__).resolve().parents[1])
-    print(parent)
     sys.path.append(parent)
     from settings import settings
     from file_transfer.cleaner import BackupsCleaner
