@@ -1,5 +1,7 @@
 from loguru import logger
 from pprint import pformat
+
+from pydantic import SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from utils.other import find_my_file
@@ -25,7 +27,14 @@ class Settings(BaseSettings):
         DB_PATH: ABS-Path to DB that will be created locally for app's data
 
         CONNECTIVITY_URLS: URLS to check network with (will be pinged)
-        DETECTOR_ON: If down-detector should be launched"""
+        DETECTOR_ON: If down-detector should be launched
+
+        WORLD_SENDER_ON: True, if world backup should be sent over HTTP somewhere (you need to launch receiver there)
+        SEND_ATTEMPTS: Number of attempts to send world backup
+        RECEIVER_IP: IP where to send world backup
+        RECEIVER_PORT: Port where to send world backup
+        RECEIVER_TOKEN: Token for authentication in receiver
+        RECEIVER_DIR: Folder to save file into when it will be received over HTTP"""
 
     model_config = SettingsConfigDict(env_file=(find_my_file(CONFIG_FILE_NAME)),
                                       extra='ignore')
@@ -55,6 +64,13 @@ class Settings(BaseSettings):
         "https://pingmydomain.blogspot.com/"
     ]
     DETECTOR_ON: bool = True
+
+    WORLD_SENDER_ON: bool      = True
+    SEND_ATTEMPTS:   int       = 5
+    RECEIVER_IP:     str       = '127.0.0.1'
+    RECEIVER_PORT:   int       = '8123'
+    RECEIVER_TOKEN:  SecretStr = SecretStr('')
+    RECEIVER_DIR:    str       = ''
 
 
 logger.info(f'Found config.env at: {find_my_file(CONFIG_FILE_NAME)}')

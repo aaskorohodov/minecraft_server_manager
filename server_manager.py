@@ -7,11 +7,12 @@ import subprocess
 
 from tqdm import tqdm
 from loguru import logger
-from datetime import datetime, timedelta
+from datetime import datetime
 
-
+from file_transfer.sender import HttpFileSender
 from settings import settings
 from main_comm import MainComm
+from file_transfer.cleaner import BackupsCleaner
 from initializer.logo_printer import LogoPrinter
 
 
@@ -39,8 +40,10 @@ class MinecraftServerManager:
             if self._check_backup_triggers():
                 try:
                     self._stop_server()
-                    self._backup_world()
-                    self._cleanup_old_backups()
+                    backup_path = self._backup_world()
+                    BackupsCleaner.cleanup_old_backups(settings.BACK_UP_DAYS, settings.BACKUP_DIR)
+                    if settings.WORLD_SENDER_ON:
+                        self._send_backup(backup_path)
                     logger.info("Backup completed")
                 except Exception as e:
                     self.main_comm.set_error(e.__str__())
@@ -118,8 +121,11 @@ class MinecraftServerManager:
         else:
             logger.info("Server process not running.")
 
-    def _backup_world(self) -> None:
-        """Copy and zip the world folder"""
+    def _backup_world(self) -> str:
+        """Copy and zip the world folder
+
+        Returns:
+            Path to zipped file"""
 
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         temp_copy = os.path.join(settings.BACKUP_DIR, f"world_{timestamp}")
@@ -133,6 +139,8 @@ class MinecraftServerManager:
 
         shutil.rmtree(temp_copy)
         logger.info(f"Backup completed: {zip_path}")
+
+        return zip_path
 
     def _zeep_world(self,
                     temp_copy: str,
@@ -157,33 +165,21 @@ class MinecraftServerManager:
                 zipf.write(abs_path, rel_path)
                 pbar.update(1)
 
-    def _cleanup_old_backups(self) -> None:
-        """Remove .zip backups older than given number of days"""
+    def _send_backup(self,
+                     file_path: str) -> None:
+        """Send world backup over HTTP"""
 
-        now = datetime.now()
-        cutoff = now - timedelta(days=settings.BACK_UP_DAYS)
+        attempt = 1
+        sent    = False
+        sender  = HttpFileSender(file_path)
+        while attempt < settings.SEND_ATTEMPTS + 1 and not sent:
+            sent = sender.send()
+            attempt += 1
 
-        deleted = 0
-        for filename in os.listdir(settings.BACKUP_DIR):
-            if not filename.startswith("world_") or not filename.endswith(".zip"):
-                continue
-
-            file_path = os.path.join(settings.BACKUP_DIR, filename)
-            try:
-                # Parse timestamp from filename: world_YYYYMMDD_HHMMSS.zip
-                time_part = filename[len("world_"):-4]  # remove prefix + ".zip"
-                file_time = datetime.strptime(time_part, "%Y%m%d_%H%M%S")
-
-                if file_time < cutoff:
-                    os.remove(file_path)
-                    deleted += 1
-            except Exception as e:
-                logger.warning(f"[WARN] Skipped file {filename}: {e}")
-
-        if deleted:
-            logger.info(f"[{datetime.now()}] Deleted {deleted} old backup(s) older than {settings.BACK_UP_DAYS} days.")
+        if sent:
+            logger.info(f'World was sent successfully on attempt #{attempt}')
         else:
-            logger.info(f"[{datetime.now()}] No old backups found for deletion.")
+            logger.warning('Was not able to send world backup copy over HTTP!')
 
     def _stop(self) -> None:
         """Stop the manager thread and server"""
