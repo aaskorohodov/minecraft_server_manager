@@ -43,7 +43,7 @@ class MinecraftServerManager:
                     backup_path = self._backup_world()
                     BackupsCleaner.cleanup_old_backups(settings.BACK_UP_DAYS, settings.BACKUP_DIR)
                     if settings.WORLD_SENDER_ON:
-                        self._send_backup(backup_path)
+                        threading.Thread(target=self._send_backup, args=(backup_path,)).start()
                     logger.info("Backup completed")
                 except Exception as e:
                     self.main_comm.set_error(e.__str__())
@@ -169,6 +169,8 @@ class MinecraftServerManager:
                      file_path: str) -> None:
         """Send world backup over HTTP"""
 
+        logger.info('Backup sending initiated...')
+        time.sleep(30)
         attempt = 0
         sent    = False
         sender  = HttpFileSender(file_path)
