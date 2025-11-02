@@ -39,6 +39,7 @@ class MinecraftServerManager:
         while self._running and not self.main_comm.stop_server:
             if self._check_backup_triggers():
                 try:
+                    self.main_comm.backup_now_trigger = True
                     self._stop_server()
                     backup_path = self._backup_world()
                     BackupsCleaner.cleanup_old_backups(settings.BACK_UP_DAYS, settings.BACKUP_DIR)
