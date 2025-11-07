@@ -1,4 +1,10 @@
 <!-- TOC -->
+* [Features](#features)
+  * [Starting with BAT](#starting-with-bat)
+  * [Trayer](#trayer)
+  * [World backup](#world-backup)
+    * [Local receiver](#local-receiver)
+  * [Down detector](#down-detector)
 * [How to use](#how-to-use)
   * [Creating shortcut for windows with poetry](#creating-shortcut-for-windows-with-poetry)
 * [Before commiting](#before-commiting)
