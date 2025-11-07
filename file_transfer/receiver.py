@@ -1,3 +1,6 @@
+"""Can be launched separately from main app and play a role of receiver for world backup"""
+
+
 import os
 import sys
 import traceback
@@ -8,14 +11,14 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 from loguru import logger
 
 try:
+    # To resolve imports in case of VSCode or direct launch with console
     parent = str(Path(__file__).resolve().parents[1])
-    print(parent)
     sys.path.append(parent)
     from settings import settings
     from file_transfer.cleaner import BackupsCleaner
 except Exception as e:
     import time
-
+    logger.exception(e)
     traceback.print_exc()
     time.sleep(10)
 
@@ -102,7 +105,6 @@ class SafeFileReceiver(BaseHTTPRequestHandler):
 
         except Exception as ex:
             logger.exception(ex)
-            traceback.print_exc()
             self._send_error(500, f"Internal server error: {ex}")
 
     def _send_ok(self,
@@ -131,8 +133,10 @@ class SafeFileReceiver(BaseHTTPRequestHandler):
         self.wfile.write(message.encode())
 
 
-def main():
-    log_file = os.path.join(os.getcwd(), "receiver.log")
+def main() -> None:
+    """Launches server to receive HTTP-requests with world backup"""
+
+    log_file   = os.path.join(os.getcwd(), "receiver.log")
     sys.stdout = open(log_file, "a", buffering=1)
     sys.stderr = open(log_file, "a", buffering=1)
     logger.remove()  # remove default sink (stdout)
