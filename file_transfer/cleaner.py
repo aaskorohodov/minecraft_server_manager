@@ -16,8 +16,7 @@ class BackupsCleaner:
             backup_days: Files, older than this number of days, will be deleted
             folder_to_check: Folder to delete files in"""
 
-        now = datetime.now()
-        cutoff = now - timedelta(days=backup_days)
+        backup_days_delta = datetime.now() - timedelta(days=backup_days)
 
         deleted = 0
         for filename in os.listdir(folder_to_check):
@@ -30,7 +29,7 @@ class BackupsCleaner:
                 time_part = filename[len("world_"):-4]  # remove prefix + ".zip"
                 file_time = datetime.strptime(time_part, "%Y%m%d_%H%M%S")
 
-                if file_time < cutoff:
+                if file_time < backup_days_delta:
                     os.remove(file_path)
                     deleted += 1
             except Exception as e:
@@ -40,4 +39,3 @@ class BackupsCleaner:
             logger.info(f"[{datetime.now()}] Deleted {deleted} old backup(s) older than {backup_days} days")
         else:
             logger.info(f"[{datetime.now()}] No old backups found for deletion")
-

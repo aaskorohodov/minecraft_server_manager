@@ -171,7 +171,7 @@ class MinecraftServerManager:
         """Send world backup over HTTP"""
 
         logger.info('Backup sending initiated...')
-        time.sleep(30)
+        time.sleep(180)
         attempt = 0
         sent    = False
         sender  = HttpFileSender(file_path)
