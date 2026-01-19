@@ -9,9 +9,9 @@ from tqdm import tqdm
 from loguru import logger
 from datetime import datetime
 
-from file_transfer.sender import HttpFileSender
 from settings import settings
 from main_comm import MainComm
+from file_transfer.sender import HttpFileSender
 from file_transfer.cleaner import BackupsCleaner
 from initializer.logo_printer import LogoPrinter
 

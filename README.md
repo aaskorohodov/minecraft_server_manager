@@ -6,8 +6,11 @@
     * [Local receiver](#local-receiver)
   * [Down detector](#down-detector)
 * [How to use](#how-to-use)
-  * [Creating shortcut for windows with poetry](#creating-shortcut-for-windows-with-poetry)
-* [Before commiting](#before-commiting)
+  * [Windows](#windows)
+    * [Getting server ready](#getting-server-ready)
+    * [Creating shortcut for windows with poetry](#creating-shortcut-for-windows-with-poetry)
+  * [Docker](#docker)
+* [Development](#development)
 <!-- TOC -->
 
 Minimalistic Manager for Minecraft Sever, designed for Windows
@@ -18,7 +21,7 @@ Minimalistic Manager for Minecraft Sever, designed for Windows
 - Can automatically back up world
 - Can automatically clean old backups
 - Can send backups to some remote server via HTTP
-- Checks if network is available and writes results in locally created DB
+- Checks if network is available and writes results in locally created DB (uptime counter)
 
 ## Starting with BAT
 
@@ -92,13 +95,28 @@ When writing to DB, down-detector will only write change in status. This is to r
 
 # How to use
 
+You can use this setup on Windows as is, or in Docker with some small adjustments.
+
+## Windows
+
+### Getting server ready
+
+First thing to do is to get server.jar ready, which is Minecraft server itself, the thing this server manager manages.
+You will need to download it from mojang and install Java. These things are well described in online.
+
+After doing that you will need to create .bat file to launch server.
+
 1. Pull
 2. Create config.env in root of the project
 3. Fill config.env as shown in config_example.env
 4. Install dependencies with poetry (from pyproject.toml) or with pip (from requirements.txt)
 5. Run main.py from virtual environment of your choice
 
-## Creating shortcut for windows with poetry
+
+### Creating shortcut for windows with poetry
+
+The main idea is, however, to let Windows manage this app (and therefor minecraft server). To do so, you will need 
+to make Windows launch this app on startup automatically, Here how you can do this:
 
 1. Locate your executable (python.exe) in poetry's virtual environment
 2. Set ABS-path to executable into shortcuts target and ABS-path to main.py as argument, like so:
@@ -112,7 +130,53 @@ C:\Users\...\Scripts
 4. Press Win+R type 'shell:startup'
 5. Place shortcut that you created into this folder
 
-# Before commiting
+With this setup (basically a single shortcut) you will make Windows start server after PC is turned on. I use it this
+exact way on dedicated PC. If you do the same way, I also recommend you to set you bios to boot your PC automatically,
+which is handy in case your electricity blinks for a moment and PC turns off - BIOS can start you PC whenever power is
+on.
+
+## Docker
+
+This app is not well tested in Docker or k8s environment, but if you are going to run this in Docker you will need to:
+
+Check download_server.sh in docker folder. Insert direct link to download required version of Minecraft (like 1.21.10)
+
+```yaml
+curl -o /data/server/server.jar \
+  https://launcher.mojang.com/v1/objects/<HASH>/server.jar   <- here in download_server.sh
+```
+
+DB is only used for down-detector (counts uptime). You can turn it off in settings.py, but if you would like to keep it
+running, make sure there is a mount for DB-file (default is sqlite, single file, will be created automatically). DB
+will be created at the path, specified in settings.py, so point it to where you want it to be.
+
+**Note: you need DB and files for your world to stay between container restarts, so make sure you mount it somewhere**
+
+Server manager has a setting to launch app from .bat (for Windows) and using command directly. In case of running 
+in Docker you will need to launch server directly, to do so keep START_BAT empty in settings.py - app will launch
+server.jar (Minecraft server itself) in this case automatically. Also set these settings.py:
+
+- SERVER_DIR 
+- WORLD_DIR 
+- BACKUP_DIR 
+- MIN_MEM 
+- MAX_MEM 
+- DB_PATH
+
+**Note: you can also start server directly (not from .bat) on Windows as well**
+
+Last this is to run Docker with something similar to this:
+
+```bash
+docker run -it \
+  -p 25565:25565 \
+  -v mc-data:/data \
+  my-shiny-minecraft-image-name
+```
+
+# Development
+
+Before commiting any changes:
 
 ```bash
 ruff check
