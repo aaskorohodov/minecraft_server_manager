@@ -86,25 +86,22 @@ class MinecraftServerManager:
         LogoPrinter.print_logo()
 
         os.chdir(settings.SERVER_DIR)
+
+        common_params = {
+            "stdin": subprocess.PIPE,
+            "stdout": subprocess.PIPE,
+            "stderr": subprocess.STDOUT,
+            "text": False,  # Changed to False to handle bytes manually
+            "bufsize": 0    # Line buffered
+        }
+
         if settings.START_BAT:
             logger.info("Starting server via .bat file...")
-            self.proc = subprocess.Popen([settings.START_BAT],
-                                         stdin=subprocess.PIPE,
-                                         stdout=subprocess.PIPE,
-                                         stderr=subprocess.STDOUT,
-                                         text=True)
+            self.proc = subprocess.Popen([settings.START_BAT], **common_params)
         else:
-            logger.info("Starting server directly...")
             self.proc = subprocess.Popen(
-                ["java",
-                 f"-Xmx{settings.MAX_MEM}G",
-                 f"-Xms{settings.MIN_MEM}G",
-                 "-jar",
-                 "server.jar"],
-                stdin=subprocess.PIPE,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT,
-                text=True
+                ["java", f"-Xmx{settings.MAX_MEM}G", "-jar", "server.jar"],
+                **common_params
             )
         time.sleep(10)
         threading.Thread(target=self._read_server_output, daemon=True).start()
@@ -193,15 +190,24 @@ class MinecraftServerManager:
         logger.info("Manager stopped")
 
     def _read_server_output(self) -> None:
-        """Continuously read Minecraft server output"""
+        """Continuously read Minecraft server output with safe decoding"""
 
         assert self.proc is not None, "Process not started"
-        for line in self.proc.stdout:
-            if line.strip():  # skip empty lines
-                try:
+        assert self.proc.stdout is not None
+
+        # Read line-by-line from the binary stream
+        for line_bytes in iter(self.proc.stdout.readline, b''):
+            try:
+                # Decode using utf-8, replacing unreadable characters with '?'
+                line = line_bytes.decode('utf-8', errors='replace').strip()
+
+                if line:
+                    # Escape brackets for Loguru tags
                     safe_line = line.replace("<", "\\<").replace(">", "\\>")
-                    # Add your colored prefix
-                    logger.opt(colors=True).info(f"<green>[MINECRAFT]</green> {safe_line.strip()}")
-                except Exception as e:
-                    logger.exception(e)
+                    logger.opt(colors=True).info(f"<green>[MINECRAFT]</green> {safe_line}")
+
+            except Exception as e:
+                logger.error(f"Error processing server line: {e}")
+
         logger.info("Minecraft output reader finished (process closed).")
+
