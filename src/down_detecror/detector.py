@@ -86,7 +86,6 @@ class DownDetector:
 
         time.sleep(10)
 
-        status = None
         last_status = self._get_status()
         self._record_status(last_status)
 

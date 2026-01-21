@@ -4,3 +4,5 @@ config.env
 /my_shiny.db
 /scratch.py
 /receiver.log
+/src/logs/
+/src/file_transfer/receiver.log

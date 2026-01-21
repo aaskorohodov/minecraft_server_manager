@@ -20,7 +20,7 @@ RUN poetry config virtualenvs.create false \
  && poetry install --no-interaction --no-ansi
 
 # Copy application code
-COPY . .
+COPY src/ src/
 COPY docker ./docker
 
 # Make scripts executable
