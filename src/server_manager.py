@@ -112,10 +112,21 @@ class MinecraftServerManager:
 
         if self.proc and self.proc.stdin:
             logger.info("Sending stop command...")
-            self.proc.stdin.write("stop\n")
-            self.proc.stdin.flush()
-            time.sleep(10)
-            logger.info("Server stopped.")
+            try:
+                # .encode() converts the string to bytes which the pipe now requires
+                self.proc.stdin.write("stop\n".encode('utf-8'))
+                self.proc.stdin.flush()
+
+                # Wait for the process to actually exit instead of just sleeping
+                logger.info("Waiting for server to shut down...")
+                self.proc.wait(timeout=30)
+
+                logger.info("Server stopped.")
+            except subprocess.TimeoutExpired:
+                logger.warning("Server took too long to stop, forcing termination...")
+                self.proc.terminate()
+            except Exception as e:
+                logger.error(f"Error during shutdown: {e}")
         else:
             logger.info("Server process not running.")
 
