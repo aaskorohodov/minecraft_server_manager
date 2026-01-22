@@ -6,3 +6,4 @@ config.env
 /receiver.log
 /src/logs/
 /src/file_transfer/receiver.log
+__pycache__/
