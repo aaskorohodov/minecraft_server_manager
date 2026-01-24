@@ -37,7 +37,9 @@ ignore = [
   "E722",  # Allow usage of bare exept
   "D100",  # Missing docstring in inits
   "D104",  # Missing docstring in public package
-  "E402"   # Module level import not at top of file
+  "E402",  # Module level import not at top of file
+  "UP012"  # Unnecessary call to `encode` as UTF-8
+
 ]
 exclude = ["tests/*"]
 select = [

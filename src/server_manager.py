@@ -1,16 +1,14 @@
 import os
 import time
-import shutil
-import zipfile
 import threading
 import subprocess
 
-from tqdm import tqdm
 from loguru import logger
 from datetime import datetime
 
 from settings import settings
 from main_comm import MainComm
+from file_transfer.backuper import FileBackuper
 from file_transfer.sender import HttpFileSender
 from file_transfer.cleaner import BackupsCleaner
 from initializer.logo_printer import LogoPrinter
@@ -38,27 +36,8 @@ class MinecraftServerManager:
 
         while self._running and not self.main_comm.stop_server:
             if self._check_backup_triggers():
-                try:
-                    self.main_comm.backup_now_trigger = True
-                    self._stop_server()
-                    backup_path = self._backup_world()
-                    BackupsCleaner.cleanup_old_backups(settings.BACK_UP_DAYS, settings.BACKUP_DIR)
-                    if settings.WORLD_SENDER_ON:
-                        threading.Thread(target=self._send_backup, args=(backup_path,)).start()
-                    logger.info("Backup completed")
-                except Exception as e:
-                    self.main_comm.set_error(e.__str__())
-                    logger.error(f"Error during world backup: {e}")
-                    logger.exception(e)
-
-                try:
-                    self._start_server()
-                except Exception as e:
-                    logger.error(f'Fatal error on server restart: {e}')
-                    logger.exception(e)
-                    self._stop()
-                    time.sleep(10)
-                    quit()
+                self._backup_world()
+                self._restart_server()
                 self.main_comm.backup_now_trigger = False
             time.sleep(1)
         self._stop()
@@ -79,6 +58,37 @@ class MinecraftServerManager:
             self.main_comm.record_net_stat_trigger = True
             return True
         return False
+
+    def _backup_world(self) -> None:
+        """Stops server, zips world and triggers sending it to remote, if configured"""
+
+        try:
+            self.main_comm.backup_now_trigger = True
+            self._stop_server()
+
+            backuper    = FileBackuper()
+            backup_path = backuper.backup_world(settings.WORLD_DIRS)
+
+            BackupsCleaner.cleanup_old_backups(settings.BACK_UP_DAYS, settings.BACKUP_DIR)
+            if settings.WORLD_SENDER_ON:
+                threading.Thread(target=self._send_backup, args=(backup_path,)).start()
+            logger.info("Backup completed")
+        except Exception as e:
+            self.main_comm.set_error(e.__str__())
+            logger.error(f"Error during world backup: {e}")
+            logger.exception(e)
+
+    def _restart_server(self) -> None:
+        """Restarts server after backing up world"""
+
+        try:
+            self._start_server()
+        except Exception as e:
+            logger.error(f'Fatal error on server restart: {e}')
+            logger.exception(e)
+            self._stop()
+            time.sleep(10)
+            quit()
 
     def _start_server(self) -> None:
         """Start Minecraft server"""
@@ -130,50 +140,6 @@ class MinecraftServerManager:
         else:
             logger.info("Server process not running.")
 
-    def _backup_world(self) -> str:
-        """Copy and zip the world folder
-
-        Returns:
-            Path to zipped file"""
-
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        temp_copy = os.path.join(settings.BACKUP_DIR, f"world_{timestamp}")
-        zip_path  = os.path.join(settings.BACKUP_DIR, f"world_{timestamp}.zip")
-
-        logger.info(f"Copying world folder to {temp_copy}...")
-        shutil.copytree(settings.WORLD_DIR, temp_copy)
-        logger.info("Zipping backup...")
-
-        self._zeep_world(temp_copy, zip_path)
-
-        shutil.rmtree(temp_copy)
-        logger.info(f"Backup completed: {zip_path}")
-
-        return zip_path
-
-    def _zeep_world(self,
-                    temp_copy: str,
-                    zip_path: str) -> None:
-        """Zips world with progress status
-
-        Args:
-            temp_copy: ABS-path to world-copy folder to zip
-            zip_path: ABS-path to where zipped folder will be saved"""
-
-        # Collect all files
-        all_files = []
-        for root, _, files in os.walk(temp_copy):
-            for f in files:
-                all_files.append(os.path.join(root, f))
-
-        with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zipf, tqdm(
-                total=len(all_files), unit="files", desc="Zipping world"
-        ) as pbar:
-            for abs_path in all_files:
-                rel_path = os.path.relpath(abs_path, temp_copy)
-                zipf.write(abs_path, rel_path)
-                pbar.update(1)
-
     def _send_backup(self,
                      file_path: str) -> None:
         """Send world backup over HTTP"""
@@ -221,4 +187,3 @@ class MinecraftServerManager:
                 logger.error(f"Error processing server line: {e}")
 
         logger.info("Minecraft output reader finished (process closed).")
-

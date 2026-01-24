@@ -15,7 +15,7 @@ class Settings(BaseSettings):
 
     Attributes:
         SERVER_DIR: ABS-path to the folder with your Minecraft Server
-        WORLD_DIR: ABS-path to the folder with your Minecraft World (must start with 'world...')
+        WORLD_DIRS: ABS-path to the folders with your Minecraft Worlds (must start with 'world...')
         BACKUP_DIR: ABS-path to the folder where world-backups will be saved
         START_BAT: Path to start.bat file that launches Minecraft Server
         BACKUP_TIME: Time for backing up world as string  in format HH:mm
@@ -39,12 +39,12 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=(find_my_file(CONFIG_FILE_NAME)),
                                       extra='ignore')
 
-    SERVER_DIR:   str = ''
-    WORLD_DIR:    str = ''
-    BACKUP_DIR:   str = ''
-    START_BAT:    str = ''
-    BACKUP_TIME:  str = ''
-    BACK_UP_DAYS: int = 5
+    SERVER_DIR:   str       = ''
+    WORLD_DIRS:   list[str] = ''
+    BACKUP_DIR:   str       = ''
+    START_BAT:    str       = ''
+    BACKUP_TIME:  str       = ''
+    BACK_UP_DAYS: int       = 5
 
     MIN_MEM: int | None = None
     MAX_MEM: int | None = None
@@ -65,7 +65,7 @@ class Settings(BaseSettings):
     ]
     DETECTOR_ON: bool = True
 
-    WORLD_SENDER_ON: bool      = True
+    WORLD_SENDER_ON: bool      = False
     SEND_ATTEMPTS:   int       = 5
     RECEIVER_IP:     str       = '127.0.0.1'
     RECEIVER_PORT:   int       = '8123'
