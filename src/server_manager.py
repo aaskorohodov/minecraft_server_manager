@@ -181,7 +181,7 @@ class MinecraftServerManager:
                     break
 
                 try:
-                    line = line_bytes.decode('utf-8', errors='replace').strip()
+                    line = line_bytes.decode('utf-8').strip()
                     if line:
                         # Pass 'line' as a separate argument.
                         # This prevents Loguru from parsing 'line' for <tags>.
