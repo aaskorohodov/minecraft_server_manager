@@ -1,4 +1,5 @@
 import os
+import sys
 import time
 import threading
 import subprocess
@@ -101,8 +102,8 @@ class MinecraftServerManager:
             "stdin": subprocess.PIPE,
             "stdout": subprocess.PIPE,
             "stderr": subprocess.STDOUT,
-            "text": False,  # Changed to False to handle bytes manually
-            "bufsize": 0    # Line buffered
+            "text": False,
+            "bufsize": 0
         }
 
         if settings.START_BAT:
@@ -173,17 +174,20 @@ class MinecraftServerManager:
         assert self.proc.stdout is not None
 
         # Read line-by-line from the binary stream
-        for line_bytes in iter(self.proc.stdout.readline, b''):
-            try:
-                # Decode using utf-8, replacing unreadable characters with '?'
-                line = line_bytes.decode('utf-8', errors='replace').strip()
+        with self.proc.stdout as pipe:
+            for line_bytes in iter(pipe.readline, b''):
+                # Check if process died unexpectedly
+                if self.proc.poll() is not None:
+                    break
 
-                if line:
-                    # Escape brackets for Loguru tags
-                    safe_line = line.replace("<", "\\<").replace(">", "\\>")
-                    logger.opt(colors=True).info(f"<green>[MINECRAFT]</green> {safe_line}")
+                try:
+                    line = line_bytes.decode('utf-8', errors='replace').strip()
+                    if line:
+                        # Pass 'line' as a separate argument.
+                        # This prevents Loguru from parsing 'line' for <tags>.
+                        logger.opt(colors=True).info("<green>[MINECRAFT]</green> {}", line)
+                except Exception as e:
+                    # Use sys.__stderr__ to bypass Loguru if Loguru itself is the issue
+                    print(f"CRITICAL: Reader thread error: {e}", file=sys.stderr)
 
-            except Exception as e:
-                logger.error(f"Error processing server line: {e}")
-
-        logger.info("Minecraft output reader finished (process closed).")
+        logger.info("Minecraft output reader finished.")
