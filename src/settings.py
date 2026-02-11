@@ -29,6 +29,8 @@ class Settings(BaseSettings):
         CONNECTIVITY_URLS: URLS to check network with (will be pinged)
         DETECTOR_ON: If down-detector should be launched
 
+        WAIT_BEFORE_BACKUP: Seconds to wait before zipping and sending backup, to let server restart
+
         WORLD_SENDER_ON: True, if world backup should be sent over HTTP somewhere (you need to launch receiver there)
         SEND_ATTEMPTS: Number of attempts to send world backup
         RECEIVER_IP: IP where to send world backup
@@ -65,7 +67,9 @@ class Settings(BaseSettings):
     ]
     DETECTOR_ON: bool = True
 
-    WORLD_SENDER_ON: bool      = False
+    WAIT_BEFORE_BACKUP: int = 180
+
+    WORLD_SENDER_ON: bool      = True
     SEND_ATTEMPTS:   int       = 5
     RECEIVER_IP:     str       = '127.0.0.1'
     RECEIVER_PORT:   int       = '8123'

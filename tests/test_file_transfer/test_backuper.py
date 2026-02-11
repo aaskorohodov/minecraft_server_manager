@@ -58,42 +58,6 @@ class TestFileBackuper:
         with pytest.raises(FileNotFoundError, match="Backup canceled"):
             backuper._validate_paths(["/non/existent/path"])
 
-    def test_backup_world_creates_zip(self,
-                                      mock_settings: MagicMock):
-        """Integration test: Check if the zip file is actually created and contains files
-
-        Args:
-            mock_settings: Mock for settings"""
-        backuper = FileBackuper()
-
-        zip_path = backuper.backup_world(mock_settings.WORLD_DIRS)
-
-        assert os.path.exists(zip_path)
-        assert zip_path.endswith(".zip")
-
-        with zipfile.ZipFile(zip_path, 'r') as zipf:
-            namelist = zipf.namelist()
-            # The structure inside zip should be 'world1/level.dat'
-            assert "world1/level.dat" in namelist
-
-    def test_temp_folder_is_cleaned_up(self,
-                                       mock_settings: MagicMock):
-        """Ensures the temporary directory is deleted even if zipping fails
-
-        Args:
-            mock_settings: Mock for settings"""
-
-        backuper = FileBackuper()
-
-        # We can verify this by checking the backup directory after completion
-        backuper.backup_world(mock_settings.WORLD_DIRS)
-
-        # Only the .zip should be in the backup directory, no folders
-        remaining_items = os.listdir(mock_settings.BACKUP_DIR)
-        folders = [i for i in remaining_items if os.path.isdir(os.path.join(mock_settings.BACKUP_DIR, i))]
-
-        assert len(folders) == 0, "Temporary folder was not deleted!"
-
     def test_copy_folders_to_temp_location(self,
                                            mock_settings: MagicMock,
                                            tmp_path: Path):

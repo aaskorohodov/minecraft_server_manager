@@ -1,6 +1,7 @@
 import os
 import shutil
 import zipfile
+from typing import Optional
 
 from tqdm import tqdm
 from loguru import logger
@@ -12,30 +13,43 @@ from settings import settings
 class FileBackuper:
     """Logic, related to backing up world"""
 
-    def backup_world(self,
-                     world_paths: list[str]) -> str:
-        """Copy and zip the world folder
+    def __init__(self):
+        """Init"""
+
+        self.temp_folder: Optional[str] = None
+        self.zip_path:    Optional[str] = None
+
+    def copy_world_to_temp_folder(self,
+                                  world_paths: list[str]) -> None:
+        """Creates copy of the worlds folders
 
         Args:
-            world_paths: List with paths to worlds to back them up
-        Returns:
-            Path to zipped file"""
+            world_paths: ABS-paths to world folders to copy them"""
 
         self._validate_paths(world_paths)
 
-        timestamp   = datetime.now().strftime("%Y%m%d_%H%M%S")
-        temp_folder = os.path.join(settings.BACKUP_DIR, f"world_{timestamp}")
-        zip_path    = os.path.join(settings.BACKUP_DIR, f"world_{timestamp}.zip")
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        self.temp_folder = os.path.join(settings.BACKUP_DIR, f"world_{timestamp}")
+        self.zip_path    = os.path.join(settings.BACKUP_DIR, f"world_{timestamp}.zip")
+
+        self._copy_folders_to_temp_location(self.temp_folder, world_paths)
+
+    def zip_world(self) -> str | None:
+        """Zips world folder (copy) and deletes temp-folder (copy of the world)
+
+        Returns:
+            ABS-zip-path, if successfully zipped"""
+
+        logger.info('Zipping world...')
 
         try:
-            self._copy_folders_to_temp_location(temp_folder, world_paths)
-            self._zip_folders(temp_folder, zip_path)
-
+            self._zip_folders(self.temp_folder, self.zip_path)
+            logger.info('Successfully zipped world!')
+            return self.zip_path
+        except Exception as e:
+            logger.exception(e)
         finally:
-            self._delete_temp_folder(temp_folder)
-
-        logger.info(f"Backup completed: {zip_path}")
-        return zip_path
+            self.delete_temp_folder()
 
     def _validate_paths(self,
                         paths_to_validate: list[str]) -> None:
@@ -71,6 +85,7 @@ class FileBackuper:
 
             logger.info(f"Copying {folder_name} to temp directory {temp_folder}")
             shutil.copytree(world_path, destination)
+            logger.info('Copied world successfully')
 
     def _zip_folders(self,
                      temp_copy: str,
@@ -97,13 +112,9 @@ class FileBackuper:
                 zipf.write(abs_path, rel_path)
                 pbar.update(1)
 
-    def _delete_temp_folder(self,
-                            temp_folder: str) -> None:
-        """Deletes temp folder, from where we were zipping
+    def delete_temp_folder(self) -> None:
+        """Deletes temp folder, from where we were zipping"""
 
-        Args:
-            temp_folder: Folder to delete"""
-
-        if os.path.exists(temp_folder):
-            shutil.rmtree(temp_folder)
+        if os.path.exists(self.temp_folder):
+            shutil.rmtree(self.temp_folder)
             logger.info("Temporary files cleaned up.")

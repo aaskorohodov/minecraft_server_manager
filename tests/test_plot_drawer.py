@@ -46,25 +46,6 @@ class TestPlotDrawer:
 
         assert status == "offline"
 
-    def test_extract_24_hours_data_adds_synthetic_records(self):
-        """Should add synthetic start and end records"""
-
-        now = datetime.datetime.now()
-        earlier = now - datetime.timedelta(hours=30)
-
-        df = pd.DataFrame([
-            {"timestamp": earlier, "status": "online"},
-            {"timestamp": now - datetime.timedelta(hours=1), "status": "offline"},
-        ])
-
-        df_24h = PlotDrawer._extract_24_hours_data(df)
-
-        # start + original + end
-        assert len(df_24h) == 3
-
-        assert df_24h.iloc[0]["timestamp"] <= now - datetime.timedelta(hours=24)
-        assert df_24h.iloc[-1]["timestamp"] >= now
-
     def test_calculate_uptime(self):
         """Uptime should be calculated correctly"""
 

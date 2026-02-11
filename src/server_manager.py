@@ -67,13 +67,10 @@ class MinecraftServerManager:
             self.main_comm.backup_now_trigger = True
             self._stop_server()
 
-            backuper    = FileBackuper()
-            backup_path = backuper.backup_world(settings.WORLD_DIRS)
-
-            BackupsCleaner.cleanup_old_backups(settings.BACK_UP_DAYS, settings.BACKUP_DIR)
-            if settings.WORLD_SENDER_ON:
-                threading.Thread(target=self._send_backup, args=(backup_path,)).start()
-            logger.info("Backup completed")
+            backuper = FileBackuper()
+            backuper.copy_world_to_temp_folder(settings.WORLD_DIRS)
+            logger.info("Main backup sequence completed")
+            threading.Thread(target=self._zip_and_send_world, args=(backuper,)).start()
         except Exception as e:
             self.main_comm.set_error(e.__str__())
             logger.error(f"Error during world backup: {e}")
@@ -141,12 +138,45 @@ class MinecraftServerManager:
         else:
             logger.info("Server process not running.")
 
+    def _zip_and_send_world(self,
+                            backuper: FileBackuper) -> None:
+        """Zips world-copy, send it to remote storage (if configured), deletes world-copy and cleans old backups
+
+        Notes:
+            Intended to be run in background
+        Args:
+            backuper: Initiated backuper"""
+
+        logger.info(
+            f'Backup post-sequence initiated. Waiting {settings.WAIT_BEFORE_BACKUP} seconds to let server start...'
+        )
+        time.sleep(settings.WAIT_BEFORE_BACKUP)
+
+        try:
+            zip_world_path = backuper.zip_world()
+            if zip_world_path:
+                logger.info('Deleting temp-copy')
+                backuper.delete_temp_folder()
+            else:
+                logger.error('Was not able to create zip! Skipping deletion of world-copy as it it the only backup '
+                             'we have')
+
+            if zip_world_path and settings.WORLD_SENDER_ON:
+                BackupsCleaner.cleanup_old_backups(settings.BACK_UP_DAYS, settings.BACKUP_DIR)
+                self._send_backup(file_path=zip_world_path)
+            elif zip_world_path and not settings.WORLD_SENDER_ON:
+                logger.warning('WORLD_SENDER_ON set to False in settings. Skipping sending')
+            elif not zip_world_path and settings.WORLD_SENDER_ON:
+                logger.error('Zipping process failed, skipping sending')
+        finally:
+            self.main_comm.backup_now_trigger = False
+            logger.info('Backup post-sequence completed')
+
     def _send_backup(self,
                      file_path: str) -> None:
         """Send world backup over HTTP"""
 
         logger.info('Backup sending initiated...')
-        time.sleep(180)
         attempt = 0
         sent    = False
         sender  = HttpFileSender(file_path)
