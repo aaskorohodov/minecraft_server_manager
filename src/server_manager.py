@@ -228,7 +228,7 @@ class MinecraftServerManager:
 
         if "logged in with entity id" in clean_line:
             try:
-                username = clean_line.split('[')[0].strip()
+                username = clean_line.split('[')[0].split(' ')[-1]
                 self.send_private_message(username,
                                           f"Good news! Server's speed increased X10 times!")
             except Exception as e:
