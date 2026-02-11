@@ -239,8 +239,21 @@ class MinecraftServerManager:
                 # Step C: Clean any accidental whitespace
                 username = username.strip()
 
-                self.send_private_message(username,
-                                          f"Good news! Server's speed increased X10 times!")
+                if username:
+                    # Schedule the message to be sent in 5 seconds
+                    # This doesn't block the log reader!
+                    delay = 60
+                    logger.info(f"Scheduling welcome message for {username} in {delay}s")
+
+                    timer = threading.Timer(
+                        interval=delay,
+                        function=self.send_private_message,
+                        args=[username, "Good news! Server's speed increased X10 times!"]
+                    )
+                    timer.start()
+
+                # self.send_private_message(username,
+                #                           f"Good news! Server's speed increased X10 times!")
             except Exception as e:
                 logger.warning(f"Failed to parse username from login line: {e}")
 
