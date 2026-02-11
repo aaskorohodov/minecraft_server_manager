@@ -236,19 +236,11 @@ class MinecraftServerManager:
 
     def send_private_message(self,
                              player_name: str,
-                             message: str,
-                             color: str = "white"):
+                             message: str):
         """Sends a fancy colored message to a specific player"""
 
         if self.proc and self.proc.stdin:
-            # Constructing the JSON string
-            # format: tellraw <player> {"text":"<message>","color":"<color>"}
-            payload = {
-                "text": message,
-                "color": color
-            }
-            import json
-            command = f"tellraw {player_name} {json.dumps(payload)}\n"
+            command = f"tell {player_name} {message}\n"
 
             self.proc.stdin.write(command)
             self.proc.stdin.flush()
