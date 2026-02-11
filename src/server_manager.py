@@ -209,6 +209,7 @@ class MinecraftServerManager:
         try:
             for line in iter(self.proc.stdout.readline, ''):
                 clean_line = line.strip()
+                self._send_login_message(clean_line)
                 if clean_line:
                     logger.opt(colors=True).info("<green>[MINECRAFT]</green> {}", clean_line)
         except Exception as e:
@@ -217,3 +218,37 @@ class MinecraftServerManager:
             # If we reach here, the process has closed because we hit the '' sentinel
             self.proc.stdout.close()
             logger.warning("Minecraft output reader finished.")
+
+    def _send_login_message(self,
+                            clean_line: str) -> None:
+        """Send message to User on login
+
+        Args:
+            clean_line: Line, received from server's log"""
+
+        if "logged in with entity id" in clean_line:
+            try:
+                username = clean_line.split('[')[0].split(' ')[-1]
+                self.send_private_message(username,
+                                          f"Good news! Server's speed increased X10 times!")
+            except Exception as e:
+                logger.warning(f"Failed to parse username from login line: {e}")
+
+    def send_private_message(self,
+                             player_name: str,
+                             message: str,
+                             color: str = "white"):
+        """Sends a fancy colored message to a specific player"""
+
+        if self.proc and self.proc.stdin:
+            # Constructing the JSON string
+            # format: tellraw <player> {"text":"<message>","color":"<color>"}
+            payload = {
+                "text": message,
+                "color": color
+            }
+            import json
+            command = f"tellraw {player_name} {json.dumps(payload)}\n"
+
+            self.proc.stdin.write(command)
+            self.proc.stdin.flush()
