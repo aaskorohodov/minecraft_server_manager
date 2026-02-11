@@ -226,9 +226,19 @@ class MinecraftServerManager:
         Args:
             clean_line: Line, received from server's log"""
 
-        if "logged in with entity id" in clean_line:
+        if "logged in with entity id" in clean_line and "[/ " not in clean_line:
             try:
-                username = clean_line.split('[')[0].split(' ')[-1]
+                # Step A: Get everything after the Minecraft log prefix "]: "
+                # This leaves us with: "Name[/188.126.89.172:58488] logged in..."
+                after_prefix = clean_line.split("]: ")[-1]
+
+                # Step B: Get everything before the IP bracket "[/"
+                # This leaves us with: "Name"
+                username = after_prefix.split("[/")[0]
+
+                # Step C: Clean any accidental whitespace
+                username = username.strip()
+
                 self.send_private_message(username,
                                           f"Good news! Server's speed increased X10 times!")
             except Exception as e:
