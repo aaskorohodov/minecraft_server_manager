@@ -1,5 +1,4 @@
 import os
-import sys
 import time
 import threading
 import subprocess
@@ -99,8 +98,10 @@ class MinecraftServerManager:
             "stdin": subprocess.PIPE,
             "stdout": subprocess.PIPE,
             "stderr": subprocess.STDOUT,
-            "text": False,
-            "bufsize": 0
+            "text": True,         # Let Python handle string conversion
+            "encoding": "utf-8",  # Force UTF-8 to avoid encoding errors
+            "bufsize": 1,         # Line buffered: Much faster than 0
+            "errors": "replace"   # Don't crash on weird characters
         }
 
         if settings.START_BAT:
@@ -111,7 +112,6 @@ class MinecraftServerManager:
                 ["java", f"-Xmx{settings.MAX_MEM}G", "-jar", "server.jar"],
                 **common_params
             )
-        time.sleep(10)
         threading.Thread(target=self._read_server_output, daemon=True).start()
         logger.info("Server started")
 
@@ -122,19 +122,22 @@ class MinecraftServerManager:
             logger.info("Sending stop command...")
             try:
                 # .encode() converts the string to bytes which the pipe now requires
-                self.proc.stdin.write("stop\n".encode('utf-8'))
+                self.proc.stdin.write("stop\n")
                 self.proc.stdin.flush()
 
                 # Wait for the process to actually exit instead of just sleeping
                 logger.info("Waiting for server to shut down...")
-                self.proc.wait(timeout=30)
+                self.proc.wait(timeout=60)
 
                 logger.info("Server stopped.")
             except subprocess.TimeoutExpired:
                 logger.warning("Server took too long to stop, forcing termination...")
-                self.proc.terminate()
+                self.proc.kill()
             except Exception as e:
                 logger.error(f"Error during shutdown: {e}")
+            finally:
+                self.proc = None
+                logger.info("Server handle cleared.")
         else:
             logger.info("Server process not running.")
 
@@ -203,21 +206,14 @@ class MinecraftServerManager:
         assert self.proc is not None, "Process not started"
         assert self.proc.stdout is not None
 
-        # Read line-by-line from the binary stream
-        with self.proc.stdout as pipe:
-            for line_bytes in iter(pipe.readline, b''):
-                # Check if process died unexpectedly
-                if self.proc.poll() is not None:
-                    break
-
-                try:
-                    line = line_bytes.decode('utf-8').strip()
-                    if line:
-                        # Pass 'line' as a separate argument.
-                        # This prevents Loguru from parsing 'line' for <tags>.
-                        logger.opt(colors=True).info("<green>[MINECRAFT]</green> {}", line)
-                except Exception as e:
-                    # Use sys.__stderr__ to bypass Loguru if Loguru itself is the issue
-                    print(f"CRITICAL: Reader thread error: {e}", file=sys.stderr)
-
-        logger.info("Minecraft output reader finished.")
+        try:
+            for line in iter(self.proc.stdout.readline, ''):
+                clean_line = line.strip()
+                if clean_line:
+                    logger.opt(colors=True).info("<green>[MINECRAFT]</green> {}", clean_line)
+        except Exception as e:
+            logger.error(f"Reader thread error: {e}")
+        finally:
+            # If we reach here, the process has closed because we hit the '' sentinel
+            self.proc.stdout.close()
+            logger.warning("Minecraft output reader finished.")
