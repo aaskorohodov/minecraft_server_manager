@@ -1,5 +1,4 @@
 import os
-import re
 import time
 import threading
 import subprocess
@@ -227,17 +226,13 @@ class MinecraftServerManager:
         Args:
             clean_line: Line, received from server's log"""
 
-        match = re.search(r"(\w+)\[/.*\] logged in", clean_line)
-
-        if match:
-            username = match.group(1)
+        if "logged in with entity id" in clean_line:
             try:
-                self.send_private_message(
-                    username,
-                    "Good news! Server's speed increased 10x!"
-                )
+                username = clean_line.split('[')[0].strip()
+                self.send_private_message(username,
+                                          f"Good news! Server's speed increased X10 times!")
             except Exception as e:
-                logger.warning(f"Failed to send login message: {e}")
+                logger.warning(f"Failed to parse username from login line: {e}")
 
     def send_private_message(self,
                              player_name: str,
