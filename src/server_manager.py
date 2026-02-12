@@ -12,6 +12,7 @@ from file_transfer.backuper import FileBackuper
 from file_transfer.sender import HttpFileSender
 from file_transfer.cleaner import BackupsCleaner
 from initializer.logo_printer import LogoPrinter
+from notifications.notificator import Notificator
 
 
 class MinecraftServerManager:
@@ -24,9 +25,10 @@ class MinecraftServerManager:
         Args:
             main_comm: Instance of thread-communicator"""
 
-        self.main_comm: MainComm                = main_comm
-        self.proc:      subprocess.Popen | None = None
-        self._running:  bool                    = False
+        self.notificator: Notificator             = Notificator()
+        self.main_comm:   MainComm                = main_comm
+        self.proc:        subprocess.Popen | None = None
+        self._running:    bool                    = False
 
     def run(self) -> None:
         """Main loop"""
@@ -119,6 +121,10 @@ class MinecraftServerManager:
         """Gracefully stop the server"""
 
         if self.proc and self.proc.stdin:
+            command = "say Server is restarting, 5 minutes max...\n"
+            self.proc.stdin.write(command)
+            self.proc.stdin.flush()
+            time.sleep(10)
             logger.info("Sending stop command...")
             try:
                 # .encode() converts the string to bytes which the pipe now requires
@@ -209,9 +215,10 @@ class MinecraftServerManager:
         try:
             for line in iter(self.proc.stdout.readline, ''):
                 clean_line = line.strip()
-                self._send_login_message(clean_line)
                 if clean_line:
                     logger.opt(colors=True).info("<green>[MINECRAFT]</green> {}", clean_line)
+                    if self.notificator.activated:
+                        self._check_if_this_is_login_event(clean_line)
         except Exception as e:
             logger.error(f"Reader thread error: {e}")
         finally:
@@ -219,51 +226,51 @@ class MinecraftServerManager:
             self.proc.stdout.close()
             logger.warning("Minecraft output reader finished.")
 
-    def _send_login_message(self,
-                            clean_line: str) -> None:
-        """Send message to User on login
+    def _check_if_this_is_login_event(self,
+                                      clean_line: str) -> None:
+        """"""
 
-        Args:
-            clean_line: Line, received from server's log"""
-
-        if "logged in with entity id" in clean_line and "[/ " not in clean_line:
-            try:
-                # Step A: Get everything after the Minecraft log prefix "]: "
-                # This leaves us with: "Name[/188.126.89.172:58488] logged in..."
-                after_prefix = clean_line.split("]: ")[-1]
-
-                # Step B: Get everything before the IP bracket "[/"
-                # This leaves us with: "Name"
-                username = after_prefix.split("[/")[0]
-
-                # Step C: Clean any accidental whitespace
-                username = username.strip()
-
-                if username:
-                    # Schedule the message to be sent in 5 seconds
-                    # This doesn't block the log reader!
+        try:
+            if "logged in with entity id" in clean_line and "[/ " not in clean_line:
+                user_name = self._extract_user_name(clean_line)
+                if user_name:
                     delay = 60
-                    logger.info(f"Scheduling welcome message for {username} in {delay}s")
+                    logger.info(f"Scheduling welcome message for {user_name} in {delay}s")
 
                     timer = threading.Timer(
                         interval=delay,
                         function=self.send_private_message,
-                        args=[username, "Good news! Server's speed increased X10 times!"]
+                        args=[user_name]
                     )
                     timer.start()
+        except Exception as e:
+            logger.exception(e)
 
-                # self.send_private_message(username,
-                #                           f"Good news! Server's speed increased X10 times!")
-            except Exception as e:
-                logger.warning(f"Failed to parse username from login line: {e}")
+    def _extract_user_name(self,
+                           clean_line: str) -> str:
+        """"""
+
+        # Step A: Get everything after the Minecraft log prefix "]: "
+        # This leaves us with: "Name[/188.126.89.172:58488] logged in..."
+        after_prefix = clean_line.split("]: ")[-1]
+
+        # Step B: Get everything before the IP bracket "[/"
+        # This leaves us with: "Name"
+        username = after_prefix.split("[/")[0]
+
+        # Step C: Clean any accidental whitespace
+        username = username.strip()
+
+        return username
 
     def send_private_message(self,
-                             player_name: str,
-                             message: str):
+                             player_name: str):
         """Sends a fancy colored message to a specific player"""
 
         if self.proc and self.proc.stdin:
-            command = f"tell {player_name} {message}\n"
-
-            self.proc.stdin.write(command)
-            self.proc.stdin.flush()
+            message = self.notificator.get_login_message(player_name)
+            if message:
+                command = f"tellraw {player_name} {message}\n"
+                logger.opt(colors=True).info("<green>[SERVER]</green> {}", command)
+                self.proc.stdin.write(command)
+                self.proc.stdin.flush()

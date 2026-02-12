@@ -10,6 +10,25 @@ from utils.other import find_my_file
 CONFIG_FILE_NAME: str = 'config.env'
 
 
+class NotificationsSettings(BaseSettings):
+    """Settings for notifications
+
+    Attributes:
+        MESSAGES_PATH: ABS-path to JSON with messages-data
+        USERS_DATA_PATH: ABS-path to JSON with Users' data"""
+
+    model_config = SettingsConfigDict(
+        env_prefix='NOTIFICATION_',
+        env_file=(find_my_file(CONFIG_FILE_NAME)),
+        extra='ignore'
+    )
+
+    ACTIVATED: bool = True
+
+    MESSAGES_PATH:   str = ''
+    USERS_DATA_PATH: str = ''
+
+
 class Settings(BaseSettings):
     """Apps main settings
 
@@ -68,6 +87,8 @@ class Settings(BaseSettings):
     DETECTOR_ON: bool = True
 
     WAIT_BEFORE_BACKUP: int = 180
+
+    notifications: NotificationsSettings = NotificationsSettings()
 
     WORLD_SENDER_ON: bool      = True
     SEND_ATTEMPTS:   int       = 5

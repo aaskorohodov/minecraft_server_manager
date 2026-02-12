@@ -1,0 +1,26 @@
+[
+    {
+        "id": "speed_up",
+        "max_views": 5,
+        "header": {
+            "en": "Server Speed up",
+            "ru": "Сервер стал быстрее"
+        },
+        "body": {
+            "en": "Server is now 10x faster",
+            "ru": "Сервер теперь х5 быстрее"
+        }
+    },
+    {
+        "id": "text_1",
+        "max_views": 0,
+        "header": {
+            "en": "T1",
+            "ru": "Тэ1"
+        },
+        "body": {
+            "en": "Text 1",
+            "ru": "Текст 1"
+        }
+    }
+]
