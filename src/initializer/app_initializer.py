@@ -69,7 +69,7 @@ class AppInitializer:
         Trayer(self.main_comm)
         server_manager = MinecraftServerManager(self.main_comm)
         threading.Thread(target=server_manager.run,
-                         daemon=True).start()
+                         daemon=False).start()
 
         if settings.down_detector.DETECTOR_ON:
             logger.info('Launching down-detector')
@@ -85,9 +85,6 @@ class AppInitializer:
         while self.main_comm.trayer_running:
             time.sleep(1)
             self._check_plot_trigger()
-
-        time.sleep(5)
-        quit()
 
     def _check_plot_trigger(self) -> None:
         """Checks if trigger to draw plot was activated. Draws plot if trigger is on"""

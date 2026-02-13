@@ -32,7 +32,7 @@ def temp_db_path(tmp_path: Path,
         Path to test-db"""
 
     db_path = tmp_path / "test.db"
-    monkeypatch.setattr("settings.settings.DB_PATH", str(db_path))
+    monkeypatch.setattr("settings.settings.paths.DB", str(db_path))
     yield db_path
 
     # This is pytest-way to do things. Pytest will call this as a teardown to delete temp-files every time

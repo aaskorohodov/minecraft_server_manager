@@ -6,6 +6,7 @@ from types import SimpleNamespace
 from _pytest.monkeypatch import MonkeyPatch
 
 from down_detecror.detector import DownDetector
+from settings import settings
 
 
 class TestDownDetector:
@@ -36,6 +37,7 @@ class TestDownDetector:
             lambda self: None
         )
 
+        settings.down_detector.DETECTOR_ON = True
         # noinspection PyTypeChecker
         self.detector  = DownDetector(main_comm=fake_main_comm)
         self.main_comm = fake_main_comm

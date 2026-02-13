@@ -13,6 +13,7 @@ from file_transfer.sender import HttpFileSender
 from file_transfer.cleaner import BackupsCleaner
 from initializer.logo_printer import LogoPrinter
 from notifications.notificator import Notificator
+from server_communicator.communicator import ServerCommunicator
 
 
 class MinecraftServerManager:
@@ -25,10 +26,11 @@ class MinecraftServerManager:
         Args:
             main_comm: Instance of thread-communicator"""
 
-        self.notificator: Notificator             = Notificator()
-        self.main_comm:   MainComm                = main_comm
-        self.proc:        subprocess.Popen | None = None
-        self._running:    bool                    = False
+        self.notificator:  Notificator               = Notificator()
+        self.main_comm:    MainComm                  = main_comm
+        self._server_proc: subprocess.Popen | None   = None
+        self._running:     bool                      = False
+        self._server_comm: ServerCommunicator | None = None
 
     def run(self) -> None:
         """Main loop"""
@@ -79,18 +81,6 @@ class MinecraftServerManager:
             logger.error(f"Error during world backup: {e}")
             logger.exception(e)
 
-    def _restart_server(self) -> None:
-        """Restarts server after backing up world"""
-
-        try:
-            self._start_server()
-        except Exception as e:
-            logger.error(f'Fatal error on server restart: {e}')
-            logger.exception(e)
-            self._stop()
-            time.sleep(10)
-            quit()
-
     def _start_server(self) -> None:
         """Start Minecraft server"""
 
@@ -102,17 +92,17 @@ class MinecraftServerManager:
             "stdin": subprocess.PIPE,
             "stdout": subprocess.PIPE,
             "stderr": subprocess.STDOUT,
-            "text": True,         # Let Python handle string conversion
-            "encoding": "utf-8",  # Force UTF-8 to avoid encoding errors
-            "bufsize": 1,         # Line buffered: Much faster than 0
-            "errors": "replace"   # Don't crash on weird characters
+            # "text": True,         # Let Python handle string conversion
+            # "encoding": "utf-8",  # Force UTF-8 to avoid encoding errors
+            "bufsize": -1,         # Line buffered: Much faster than 0
+            # "errors": "replace"   # Don't crash on weird characters
         }
 
         if settings.paths.START_BAT:
             logger.info("Starting server via .bat file...")
-            self.proc = subprocess.Popen([settings.paths.START_BAT], **common_params)
+            self._server_proc = subprocess.Popen([settings.paths.START_BAT], **common_params)
         else:
-            self.proc = subprocess.Popen(
+            self._server_proc = subprocess.Popen(
                 [
                     "java",
                     "-Dfile.encoding=UTF-8",
@@ -125,35 +115,47 @@ class MinecraftServerManager:
                 ],
                 **common_params
             )
-        threading.Thread(target=self._read_server_output, daemon=True).start()
+
+        self._server_comm = ServerCommunicator(self._server_proc)
+        threading.Thread(target=self._server_comm.read_server_output, daemon=True).start()
         logger.info("Server started")
+
+    def _restart_server(self) -> None:
+        """Restarts server after backing up world"""
+
+        try:
+            self._start_server()
+        except Exception as e:
+            logger.error(f'Fatal error on server restart: {e}')
+            logger.exception(e)
+            self._stop()
+            time.sleep(10)
+            quit()
 
     def _stop_server(self) -> None:
         """Gracefully stop the server"""
 
-        if self.proc and self.proc.stdin:
-            command = "say Server is restarting, 5 minutes max...\n"
-            self.proc.stdin.write(command)
-            self.proc.stdin.flush()
-            time.sleep(10)
-            logger.info("Sending stop command...")
+        if self._server_proc and self._server_proc.stdin:
             try:
-                # .encode() converts the string to bytes which the pipe now requires
-                self.proc.stdin.write("stop\n")
-                self.proc.stdin.flush()
+                command = "say Server is restarting, 5 minutes max...\n"
+                self._server_comm.send_to_server(command)
+                time.sleep(10)
+
+                logger.info("Sending stop command...")
+                self._server_comm.send_to_server(command="stop\n")
 
                 # Wait for the process to actually exit instead of just sleeping
                 logger.info("Waiting for server to shut down...")
-                self.proc.wait(timeout=60)
+                self._server_proc.wait(timeout=60)
 
                 logger.info("Server stopped.")
             except subprocess.TimeoutExpired:
                 logger.warning("Server took too long to stop, forcing termination...")
-                self.proc.kill()
+                self._server_proc.kill()
             except Exception as e:
                 logger.error(f"Error during shutdown: {e}")
             finally:
-                self.proc = None
+                self._server_proc = None
                 logger.info("Server handle cleared.")
         else:
             logger.info("Server process not running.")
@@ -217,83 +219,3 @@ class MinecraftServerManager:
         self._running = False
         self._stop_server()
         logger.info("Manager stopped")
-
-    def _read_server_output(self) -> None:
-        """Continuously read Minecraft server output with safe decoding"""
-
-        assert self.proc is not None, "Process not started"
-        assert self.proc.stdout is not None
-
-        try:
-            for line in iter(self.proc.stdout.readline, ''):
-                clean_line = line.strip()
-                if clean_line:
-                    logger.opt(colors=True).info("<green>[MINECRAFT]</green> {}", clean_line)
-                    if self.notificator.activated:
-                        self._check_if_this_is_login_event(clean_line)
-        except Exception as e:
-            logger.error(f"Reader thread error: {e}")
-        finally:
-            # If we reach here, the process has closed because we hit the '' sentinel
-            self.proc.stdout.close()
-            logger.warning("Minecraft output reader finished.")
-
-    def _check_if_this_is_login_event(self,
-                                      clean_line: str) -> None:
-        """Checks if Player logged in and initiates login message if so
-
-        Args:
-            clean_line: Output from server to check if this is a login event"""
-
-        try:
-            if "logged in with entity id" in clean_line and "[/ " not in clean_line:
-                user_name = self._extract_user_name(clean_line)
-                if user_name:
-                    logger.info(f"Scheduling welcome message for {user_name} "
-                                f"in {settings.notifications.START_MESSAGE_DELAY}s")
-
-                    timer = threading.Timer(
-                        interval=settings.notifications.START_MESSAGE_DELAY,
-                        function=self.send_private_message,
-                        args=[user_name]
-                    )
-                    timer.start()
-        except Exception as e:
-            logger.exception(e)
-
-    def _extract_user_name(self,
-                           clean_line: str) -> str:
-        """Extracts UserName from server's output
-
-        Args:
-            clean_line: Output from server
-        Returns:
-            UserName"""
-
-        # Step A: Get everything after the Minecraft log prefix "]: "
-        # This leaves us with: "Name[/188.126.89.172:58488] logged in..."
-        after_prefix = clean_line.split("]: ")[-1]
-
-        # Step B: Get everything before the IP bracket "[/"
-        # This leaves us with: "Name"
-        username = after_prefix.split("[/")[0]
-
-        # Step C: Clean any accidental whitespace
-        username = username.strip()
-
-        return username
-
-    def send_private_message(self,
-                             player_name: str) -> None:
-        """Sends a message to a specific player
-
-        Args:
-            player_name: Player to send message to"""
-
-        if self.proc and self.proc.stdin:
-            message = self.notificator.get_login_message(player_name)
-            if message:
-                command = f"tellraw {player_name} {message}\n"
-                logger.opt(colors=True).info("<green>[SERVER]</green> {}", command)
-                self.proc.stdin.write(command)
-                self.proc.stdin.flush()

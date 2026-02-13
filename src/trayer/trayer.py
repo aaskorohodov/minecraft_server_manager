@@ -84,10 +84,6 @@ class Trayer(SysTrayIcon):
 
         self.main_comm.trayer_running = False
         self.main_comm.stop_server    = True
-        time.sleep(1)
-
-        # Killing GUI, if it exists
-        InstanceChecker().kill_process('main_launcher')
 
     # Service
 
