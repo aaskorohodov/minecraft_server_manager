@@ -38,7 +38,7 @@ class PlotDrawer:
 
         root_folder = os.path.dirname(os.path.dirname(__file__))
         os.chdir(root_folder)
-        conn = sqlite3.connect(settings.DB_PATH)
+        conn = sqlite3.connect(settings.paths.DB)
 
         df = pd.read_sql_query(
             "SELECT * FROM connectivity ORDER BY timestamp",
@@ -178,7 +178,7 @@ class PlotDrawer:
         os.chdir(root_folder)
         df = pd.read_sql_query(
             "SELECT * FROM connectivity ORDER BY timestamp",
-            sqlite3.connect(settings.DB_PATH)
+            sqlite3.connect(settings.paths.DB)
         )
         df['timestamp'] = pd.to_datetime(df['timestamp'])
 

@@ -36,7 +36,7 @@ class SafeFileReceiver(BaseHTTPRequestHandler):
             True, if token is correct"""
 
         token = self.headers.get('X-Auth-Token')
-        if token != settings.RECEIVER_TOKEN.get_secret_value():
+        if token != settings.backups.RECEIVER_TOKEN.get_secret_value():
             self._send_error(403, "Forbidden: Invalid token")
             return False
         return True
@@ -88,8 +88,8 @@ class SafeFileReceiver(BaseHTTPRequestHandler):
                 return
 
             filename = self.headers.get('X-Filename', 'received_file')
-            os.makedirs(settings.RECEIVER_DIR, exist_ok=True)
-            file_path = os.path.join(settings.RECEIVER_DIR, filename)
+            os.makedirs(settings.backups.RECEIVER_DIR, exist_ok=True)
+            file_path = os.path.join(settings.backups.RECEIVER_DIR, filename)
 
             # noinspection PyTypeChecker
             bytes_written = self._write_file_in_chunks(file_path, length)
@@ -99,8 +99,8 @@ class SafeFileReceiver(BaseHTTPRequestHandler):
 
             self._send_ok(f"File '{filename}' received successfully ({bytes_written} bytes)")
             BackupsCleaner.cleanup_old_backups(
-                backup_days=settings.BACK_UP_DAYS,
-                folder_to_check=settings.RECEIVER_DIR
+                backup_days=settings.backups.BACK_UP_DAYS,
+                folder_to_check=settings.backups.RECEIVER_DIR
             )
 
         except Exception as ex:
@@ -144,8 +144,8 @@ def main() -> None:
 
     logger.info('Receiver running...')
     # noinspection PyTypeChecker
-    server = HTTPServer(('0.0.0.0', settings.RECEIVER_PORT), SafeFileReceiver)
-    logger.info(f"Receiver running on port {settings.RECEIVER_PORT}...")
+    server = HTTPServer(('0.0.0.0', settings.backups.RECEIVER_PORT), SafeFileReceiver)
+    logger.info(f"Receiver running on port {settings.backups.RECEIVER_PORT}...")
     server.serve_forever()
 
 

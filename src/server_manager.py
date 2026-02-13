@@ -1,3 +1,4 @@
+import atexit
 import os
 import time
 import threading
@@ -33,6 +34,7 @@ class MinecraftServerManager:
     def run(self) -> None:
         """Main loop"""
 
+        atexit.register(self._stop_server)
         self._running = True
         self._start_server()
 
@@ -51,10 +53,12 @@ class MinecraftServerManager:
             True if back up should be executed"""
 
         now = datetime.now().strftime("%H:%M")
-        its_time_to_backup = now == settings.BACKUP_TIME
+        its_time_to_backup = now == settings.backups.BACKUP_TIME
         if its_time_to_backup or self.main_comm.backup_now_trigger:
             if its_time_to_backup:
-                logger.info(f"Reached stop time {settings.BACKUP_TIME}, creating world backup and restarting server...")
+                logger.info(
+                    f"Reached stop time {settings.backups.BACKUP_TIME}, creating world backup and restarting server..."
+                )
             else:
                 logger.info('Backup trigger activated, creating world backup and restarting server...')
             self.main_comm.record_net_stat_trigger = True
@@ -69,7 +73,7 @@ class MinecraftServerManager:
             self._stop_server()
 
             backuper = FileBackuper()
-            backuper.copy_world_to_temp_folder(settings.WORLD_DIRS)
+            backuper.copy_world_to_temp_folder(settings.paths.WORLD_DIRS)
             logger.info("Main backup sequence completed")
             threading.Thread(target=self._zip_and_send_world, args=(backuper,)).start()
         except Exception as e:
@@ -94,7 +98,7 @@ class MinecraftServerManager:
 
         LogoPrinter.print_logo()
 
-        os.chdir(settings.SERVER_DIR)
+        os.chdir(settings.paths.SERVER_DIR)
 
         common_params = {
             "stdin": subprocess.PIPE,
@@ -106,14 +110,27 @@ class MinecraftServerManager:
             "errors": "replace"   # Don't crash on weird characters
         }
 
-        if settings.START_BAT:
+        if settings.paths.START_BAT:
             logger.info("Starting server via .bat file...")
-            self.proc = subprocess.Popen([settings.START_BAT], **common_params)
+            self.proc = subprocess.Popen([settings.paths.START_BAT], **common_params)
         else:
             self.proc = subprocess.Popen(
-                ["java", f"-Xmx{settings.MAX_MEM}G", "-jar", "server.jar"],
+                [
+                    "java",
+                    "-Dfile.encoding=UTF-8",
+                    "-Dsun.stdout.encoding=UTF-8",
+                    "-Dsun.stderr.encoding=UTF-8",
+                    f"-Xms{settings.MIN_MEM}G",
+                    f"-Xmx{settings.MAX_MEM}G",
+                    "-jar", f"{settings.paths.SERVER_JAR}",
+                    "nogui"
+                ],
                 **common_params
             )
+            # self.proc = subprocess.Popen(
+            #     ["java", f"-Xmx{settings.MAX_MEM}G", "-jar", "server.jar"],
+            #     **common_params
+            # )
         threading.Thread(target=self._read_server_output, daemon=True).start()
         logger.info("Server started")
 
@@ -157,9 +174,10 @@ class MinecraftServerManager:
             backuper: Initiated backuper"""
 
         logger.info(
-            f'Backup post-sequence initiated. Waiting {settings.WAIT_BEFORE_BACKUP} seconds to let server start...'
+            f'Backup post-sequence initiated. '
+            f'Waiting {settings.backups.WAIT_BEFORE_BACKUP} seconds to let server start...'
         )
-        time.sleep(settings.WAIT_BEFORE_BACKUP)
+        time.sleep(settings.backups.WAIT_BEFORE_BACKUP)
 
         try:
             zip_world_path = backuper.zip_world()
@@ -170,12 +188,12 @@ class MinecraftServerManager:
                 logger.error('Was not able to create zip! Skipping deletion of world-copy as it it the only backup '
                              'we have')
 
-            if zip_world_path and settings.WORLD_SENDER_ON:
-                BackupsCleaner.cleanup_old_backups(settings.BACK_UP_DAYS, settings.BACKUP_DIR)
+            if zip_world_path and settings.backups.WORLD_SENDER_ON:
+                BackupsCleaner.cleanup_old_backups(settings.backups.BACK_UP_DAYS, settings.paths.BACKUP_DIR)
                 self._send_backup(file_path=zip_world_path)
-            elif zip_world_path and not settings.WORLD_SENDER_ON:
+            elif zip_world_path and not settings.backups.WORLD_SENDER_ON:
                 logger.warning('WORLD_SENDER_ON set to False in settings. Skipping sending')
-            elif not zip_world_path and settings.WORLD_SENDER_ON:
+            elif not zip_world_path and settings.backups.WORLD_SENDER_ON:
                 logger.error('Zipping process failed, skipping sending')
         finally:
             self.main_comm.backup_now_trigger = False
@@ -189,7 +207,7 @@ class MinecraftServerManager:
         attempt = 0
         sent    = False
         sender  = HttpFileSender(file_path)
-        while attempt < settings.SEND_ATTEMPTS + 1 and not sent:
+        while attempt < settings.backups.SEND_ATTEMPTS + 1 and not sent:
             sent = sender.send()
             attempt += 1
 
@@ -228,17 +246,20 @@ class MinecraftServerManager:
 
     def _check_if_this_is_login_event(self,
                                       clean_line: str) -> None:
-        """"""
+        """Checks if Player logged in and initiates login message if so
+
+        Args:
+            clean_line: Output from server to check if this is a login event"""
 
         try:
             if "logged in with entity id" in clean_line and "[/ " not in clean_line:
                 user_name = self._extract_user_name(clean_line)
                 if user_name:
-                    delay = 60
-                    logger.info(f"Scheduling welcome message for {user_name} in {delay}s")
+                    logger.info(f"Scheduling welcome message for {user_name} "
+                                f"in {settings.notifications.START_MESSAGE_DELAY}s")
 
                     timer = threading.Timer(
-                        interval=delay,
+                        interval=settings.notifications.START_MESSAGE_DELAY,
                         function=self.send_private_message,
                         args=[user_name]
                     )
@@ -248,7 +269,12 @@ class MinecraftServerManager:
 
     def _extract_user_name(self,
                            clean_line: str) -> str:
-        """"""
+        """Extracts UserName from server's output
+
+        Args:
+            clean_line: Output from server
+        Returns:
+            UserName"""
 
         # Step A: Get everything after the Minecraft log prefix "]: "
         # This leaves us with: "Name[/188.126.89.172:58488] logged in..."
@@ -264,8 +290,11 @@ class MinecraftServerManager:
         return username
 
     def send_private_message(self,
-                             player_name: str):
-        """Sends a fancy colored message to a specific player"""
+                             player_name: str) -> None:
+        """Sends a message to a specific player
+
+        Args:
+            player_name: Player to send message to"""
 
         if self.proc and self.proc.stdin:
             message = self.notificator.get_login_message(player_name)

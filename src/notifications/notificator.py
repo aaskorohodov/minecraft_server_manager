@@ -30,8 +30,8 @@ class Notificator:
         Returns:
             True, if files for notifications were found"""
 
-        notification_file_ok = os.path.exists(settings.notifications.MESSAGES_PATH)
-        user_data_file_ok    = os.path.exists(settings.notifications.USERS_DATA_PATH)
+        notification_file_ok = os.path.exists(settings.paths.MESSAGES)
+        user_data_file_ok    = os.path.exists(settings.paths.USERS_DATA)
         if notification_file_ok and user_data_file_ok:
             logger.info('Notifications file found. Notificator activated')
             return True
@@ -41,18 +41,23 @@ class Notificator:
 
     def get_login_message(self,
                           user_name: str) -> str:
-        """"""
+        """Selects login message for Player and updates Player's data in JSON
+
+        Args:
+            user_name: User to get message for
+        Returns:
+            Message for User as JSON-string, or empty string, if no message was selected"""
 
         if not self.activated:
             return ''
 
         try:
-            notifications = NotificationsCatalogue(self._load_data(settings.notifications.MESSAGES_PATH))
-            all_users     = UsersCatalogue(self._load_data(settings.notifications.USERS_DATA_PATH))
+            notifications = NotificationsCatalogue(self._load_data(settings.paths.MESSAGES))
+            all_users     = UsersCatalogue(self._load_data(settings.paths.USERS_DATA))
             current_user  = self._get_or_create_user(all_users, user_name)
             notification  = self._select_notification(notifications, current_user)
             self._update_user_data(notification, current_user)
-            self._save_data(settings.notifications.USERS_DATA_PATH, data=all_users.to_dict())
+            self._save_data(settings.paths.USERS_DATA, data=all_users.to_dict())
 
             return notification.get_formatted_text()
 
@@ -63,7 +68,13 @@ class Notificator:
     def _get_or_create_user(self,
                             users: UsersCatalogue,
                             user_name: str) -> User:
-        """"""
+        """Gets User from JSON with data or creates new one, if User is not yet in JSON
+
+        Args:
+            users: All Users from JSON
+            user_name: Current User to search or create
+        Returns:
+            User model"""
 
         if user_name not in users.users:
             user = self._create_new_user(user_name)
@@ -74,7 +85,12 @@ class Notificator:
 
     def _create_new_user(self,
                          user_name: str) -> User:
-        """"""
+        """Create new User model
+
+        Args:
+            user_name: User to create model for
+        Returns:
+            User model"""
 
         user = User(
             name=user_name,
@@ -85,7 +101,13 @@ class Notificator:
     def _select_notification(self,
                              notifications: NotificationsCatalogue,
                              current_user: User) -> Notification:
-        """"""
+        """Selects notification. Prioritizes Notifications for random texts
+
+        Args:
+            notifications: All notifications
+            current_user: User to get notification for
+        Returns:
+            Notification model"""
 
         for notification in notifications.announcements:
             if notification.id in current_user.seen_announcements:

@@ -14,8 +14,8 @@ class NotificationsSettings(BaseSettings):
     """Settings for notifications
 
     Attributes:
-        MESSAGES_PATH: ABS-path to JSON with messages-data
-        USERS_DATA_PATH: ABS-path to JSON with Users' data"""
+        ACTIVATED: If notificator should be activated, direct flag
+        START_MESSAGE_DELAY: Delay in seconds to show login notification, after Player logged in"""
 
     model_config = SettingsConfigDict(
         env_prefix='NOTIFICATION_',
@@ -23,54 +23,87 @@ class NotificationsSettings(BaseSettings):
         extra='ignore'
     )
 
-    ACTIVATED: bool = True
-
-    MESSAGES_PATH:   str = ''
-    USERS_DATA_PATH: str = ''
+    ACTIVATED:           bool = True
+    START_MESSAGE_DELAY: int = 5
 
 
-class Settings(BaseSettings):
-    """Apps main settings
+class PathsSettings(BaseSettings):
+    """Paths to different files
 
     Attributes:
         SERVER_DIR: ABS-path to the folder with your Minecraft Server
         WORLD_DIRS: ABS-path to the folders with your Minecraft Worlds (must start with 'world...')
         BACKUP_DIR: ABS-path to the folder where world-backups will be saved
-        START_BAT: Path to start.bat file that launches Minecraft Server
-        BACKUP_TIME: Time for backing up world as string  in format HH:mm
+        START_BAT: ABS-Path to start.bat file that launches Minecraft Server
+        SERVER_JAR: ABS-Path to .jar with server, if START_BAT not set
+        DB: ABS-Path to DB that will be created locally for app's data
+        MESSAGES: ABS-path to JSON with messages-data
+        USERS_DATA: ABS-path to JSON with Users' data"""
+
+    model_config = SettingsConfigDict(
+        env_prefix='PATH_',
+        env_file=(find_my_file(CONFIG_FILE_NAME)),
+        extra='ignore'
+    )
+
+    SERVER_DIR: str       = ''
+    WORLD_DIRS: list[str] = ''
+    BACKUP_DIR: str       = ''
+    START_BAT:  str       = ''
+    SERVER_JAR: str       = ''
+    DB:         str       = 'my_shiny.db'
+    MESSAGES:   str       = ''
+    USERS_DATA: str       = ''
+
+
+class BackupSettings(BaseSettings):
+    """Settings for backing up world
+
+    Attributes:
+        BACKUP_TIME: Time for backing up world as string in format HH:mm
         BACK_UP_DAYS: Backups, made more days ago, will be automatically deleted
-
-        MIN_MEM: In case no START_BAT provided, will be used to set as minimum RAM for server
-        MAX_MEM: In case no START_BAT provided, will be used to set as maximum RAM for server
-
-        DB_PATH: ABS-Path to DB that will be created locally for app's data
-
-        CONNECTIVITY_URLS: URLS to check network with (will be pinged)
-        DETECTOR_ON: If down-detector should be launched
-
         WAIT_BEFORE_BACKUP: Seconds to wait before zipping and sending backup, to let server restart
 
         WORLD_SENDER_ON: True, if world backup should be sent over HTTP somewhere (you need to launch receiver there)
         SEND_ATTEMPTS: Number of attempts to send world backup
+
         RECEIVER_IP: IP where to send world backup
         RECEIVER_PORT: Port where to send world backup
         RECEIVER_TOKEN: Token for authentication in receiver
         RECEIVER_DIR: Folder to save file into when it will be received over HTTP"""
 
-    model_config = SettingsConfigDict(env_file=(find_my_file(CONFIG_FILE_NAME)),
-                                      extra='ignore')
+    model_config = SettingsConfigDict(
+        env_prefix='BACKUPS_',
+        env_file=(find_my_file(CONFIG_FILE_NAME)),
+        extra='ignore'
+    )
 
-    SERVER_DIR:   str       = ''
-    WORLD_DIRS:   list[str] = ''
-    BACKUP_DIR:   str       = ''
-    START_BAT:    str       = ''
-    BACKUP_TIME:  str       = ''
-    BACK_UP_DAYS: int       = 5
+    BACKUP_TIME:        str = ''
+    BACK_UP_DAYS:       int = 5
+    WAIT_BEFORE_BACKUP: int = 180
 
-    MIN_MEM: int | None = None
-    MAX_MEM: int | None = None
+    WORLD_SENDER_ON: bool = True
+    SEND_ATTEMPTS:   int  = 5
 
-    DB_PATH: str = "my_shiny.db"
+    RECEIVER_IP:    str       = '127.0.0.1'
+    RECEIVER_PORT:  int       = '8123'
+    RECEIVER_TOKEN: SecretStr = SecretStr('')
+    RECEIVER_DIR:   str       = ''
+
+
+class DownDetectorSettings(BaseSettings):
+    """Settings for DownDetector
+
+    Attributes:
+        CONNECTIVITY_URLS: URLS to check network with (will be pinged)
+        DETECTOR_ON: If down-detector should be launched
+    """
+
+    model_config = SettingsConfigDict(
+        env_prefix='DD_',
+        env_file=(find_my_file(CONFIG_FILE_NAME)),
+        extra='ignore'
+    )
 
     CONNECTIVITY_URLS: list[str] = [
         "https://www.google.com",
@@ -86,16 +119,29 @@ class Settings(BaseSettings):
     ]
     DETECTOR_ON: bool = True
 
-    WAIT_BEFORE_BACKUP: int = 180
 
+class Settings(BaseSettings):
+    """Apps main settings
+
+    Attributes:
+        MIN_MEM: In case no START_BAT provided, will be used to set as minimum RAM for server
+        MAX_MEM: In case no START_BAT provided, will be used to set as maximum RAM for server
+
+        paths: Paths to different files
+        notifications: Settings for notifications
+        backups: Settings for backing up world
+        down_detector: Settings for DownDetector"""
+
+    model_config = SettingsConfigDict(env_file=(find_my_file(CONFIG_FILE_NAME)),
+                                      extra='ignore')
+
+    MIN_MEM: int | None = 8
+    MAX_MEM: int | None = 12
+
+    paths:         PathsSettings         = PathsSettings()
     notifications: NotificationsSettings = NotificationsSettings()
-
-    WORLD_SENDER_ON: bool      = True
-    SEND_ATTEMPTS:   int       = 5
-    RECEIVER_IP:     str       = '127.0.0.1'
-    RECEIVER_PORT:   int       = '8123'
-    RECEIVER_TOKEN:  SecretStr = SecretStr('')
-    RECEIVER_DIR:    str       = ''
+    backups:       BackupSettings        = BackupSettings()
+    down_detector: DownDetectorSettings  = DownDetectorSettings()
 
 
 logger.info(f'Found config.env at: {find_my_file(CONFIG_FILE_NAME)}')

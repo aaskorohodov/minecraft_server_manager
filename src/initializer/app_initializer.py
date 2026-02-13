@@ -1,4 +1,5 @@
 import os
+import sys
 import time
 import threading
 
@@ -26,9 +27,9 @@ class AppInitializer:
         Raises:
             AssertionError: In case no bat and no min-max mem  provided"""
 
-        if settings.START_BAT:
-            if not os.path.exists(settings.START_BAT):
-                raise AssertionError(f'No bat found at {settings.START_BAT}')
+        if settings.paths.START_BAT:
+            if not os.path.exists(settings.paths.START_BAT):
+                raise AssertionError(f'No bat found at {settings.paths.START_BAT}')
         else:
             if not settings.MIN_MEM or not settings.MIN_MEM:
                 raise AssertionError('You should provide .bat to start server or indicate min and max RAM in settings!')
@@ -53,7 +54,14 @@ class AppInitializer:
         )
 
         # Optional: also log to console
-        logger.add(lambda msg: print(msg, end=""), colorize=True)
+        logger.add(
+            sys.stderr,
+            colorize=True,
+            enqueue=True,
+            backtrace=True,
+            diagnose=True
+        )
+        # logger.add(lambda msg: print(msg, end=""), colorize=True)
 
     def init_components(self) -> None:
         """Create instances of app's main components"""
@@ -63,7 +71,7 @@ class AppInitializer:
         threading.Thread(target=server_manager.run,
                          daemon=True).start()
 
-        if settings.DETECTOR_ON:
+        if settings.down_detector.DETECTOR_ON:
             logger.info('Launching down-detector')
             down_detector  = DownDetector(self.main_comm)
             threading.Thread(target=down_detector.monitor,

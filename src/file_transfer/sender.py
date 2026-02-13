@@ -80,10 +80,10 @@ class HttpFileSender:
                                                                unit_divisor=1024,
                                                                desc=f"Uploading {self.file_name}") as progress:
                 response = requests.post(
-                    f"http://{settings.RECEIVER_IP}:{settings.RECEIVER_PORT}",
+                    f"http://{settings.backups.RECEIVER_IP}:{settings.backups.RECEIVER_PORT}",
                     data=ProgressFile(f, progress),
                     headers={
-                        'X-Auth-Token': settings.RECEIVER_TOKEN.get_secret_value(),
+                        'X-Auth-Token': settings.backups.RECEIVER_TOKEN.get_secret_value(),
                         'X-Filename': self.file_name,
                     },
                     timeout=1800,  # 30 minutes

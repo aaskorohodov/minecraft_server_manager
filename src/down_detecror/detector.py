@@ -24,7 +24,7 @@ class DownDetector:
 
         self.main_comm: MainComm = main_comm
 
-        self._conn   = sqlite3.connect(settings.DB_PATH, check_same_thread=False)
+        self._conn   = sqlite3.connect(settings.paths.DB, check_same_thread=False)
         self._cursor = self._conn.cursor()
 
         self._init_db()
@@ -51,7 +51,7 @@ class DownDetector:
         Returns:
             True, in case internet works"""
 
-        urls = copy.copy(settings.CONNECTIVITY_URLS)
+        urls = copy.copy(settings.down_detector.CONNECTIVITY_URLS)
         random.shuffle(urls)
         for url in urls:
             try:

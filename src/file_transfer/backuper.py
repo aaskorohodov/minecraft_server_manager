@@ -29,8 +29,8 @@ class FileBackuper:
         self._validate_paths(world_paths)
 
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        self.temp_folder = os.path.join(settings.BACKUP_DIR, f"world_{timestamp}")
-        self.zip_path    = os.path.join(settings.BACKUP_DIR, f"world_{timestamp}.zip")
+        self.temp_folder = os.path.join(settings.paths.BACKUP_DIR, f"world_{timestamp}")
+        self.zip_path    = os.path.join(settings.paths.BACKUP_DIR, f"world_{timestamp}.zip")
 
         self._copy_folders_to_temp_location(self.temp_folder, world_paths)
 

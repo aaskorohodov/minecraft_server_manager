@@ -70,8 +70,8 @@ class TestNotificator:
 
         notifications_data_json_path, user_data_json_path = self._get_fixtures_path()
         settings.notifications.ACTIVATED       = True
-        settings.notifications.MESSAGES_PATH   = str(notifications_data_json_path)
-        settings.notifications.USERS_DATA_PATH = str(user_data_json_path)
+        settings.paths.MESSAGES   = str(notifications_data_json_path)
+        settings.paths.USERS_DATA = str(user_data_json_path)
 
     def test_notificator_activated(self):
         """"""
@@ -186,8 +186,8 @@ class TestNotificator:
         user_data_json_path = user_data_json_path.parent / 'new_users.json'
 
         settings.notifications.ACTIVATED       = True
-        settings.notifications.MESSAGES_PATH   = str(notifications_data_json_path)
-        settings.notifications.USERS_DATA_PATH = str(user_data_json_path)
+        settings.paths.MESSAGES   = str(notifications_data_json_path)
+        settings.paths.USERS_DATA = str(user_data_json_path)
 
         with open(notifications_data_json_path, 'w', encoding='utf-8') as f:
             # indent=4 makes the file human-readable for manual edits
@@ -207,8 +207,8 @@ class TestNotificator:
         user_data_json_path = user_data_json_path.parent / 'new_users.json'
 
         settings.notifications.ACTIVATED       = True
-        settings.notifications.MESSAGES_PATH   = str(notifications_data_json_path)
-        settings.notifications.USERS_DATA_PATH = str(user_data_json_path)
+        settings.paths.MESSAGES   = str(notifications_data_json_path)
+        settings.paths.USERS_DATA = str(user_data_json_path)
 
         with open(user_data_json_path, 'w', encoding='utf-8') as f:
             # indent=4 makes the file human-readable for manual edits
