@@ -34,7 +34,6 @@ class MinecraftServerManager:
     def run(self) -> None:
         """Main loop"""
 
-        atexit.register(self._stop_server)
         self._running = True
         self._start_server()
 
@@ -127,10 +126,6 @@ class MinecraftServerManager:
                 ],
                 **common_params
             )
-            # self.proc = subprocess.Popen(
-            #     ["java", f"-Xmx{settings.MAX_MEM}G", "-jar", "server.jar"],
-            #     **common_params
-            # )
         threading.Thread(target=self._read_server_output, daemon=True).start()
         logger.info("Server started")
 
