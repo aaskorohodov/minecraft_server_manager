@@ -117,7 +117,7 @@ class MinecraftServerManager:
             )
 
         self._server_comm = ServerCommunicator(self._server_proc)
-        threading.Thread(target=self._server_comm.read_server_output, daemon=True).start()
+        self._server_comm.start_communication()
         logger.info("Server started")
 
     def _restart_server(self) -> None:

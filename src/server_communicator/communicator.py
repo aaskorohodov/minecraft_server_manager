@@ -2,6 +2,7 @@ import threading
 import subprocess
 
 from loguru import logger
+from queue import Queue, Empty
 
 from settings import settings
 from notifications.notificator import Notificator
@@ -20,23 +21,51 @@ class ServerCommunicator:
         self._server_proc: subprocess.Popen = server_proc
         self.notificator:  Notificator      = Notificator()
 
-    def read_server_output(self) -> None:
-        """Continuously read Minecraft server output with safe decoding"""
+        self._output_queue: Queue           = Queue(maxsize=10000)
+        self._stop_event:   threading.Event = threading.Event()
+
+    def start_communication(self):
+        """Entry point to launch both threads"""
+
+        # Thread 1: Producer (Reads from process)
+        threading.Thread(target=self._reader_loop, daemon=True).start()
+
+        # Thread 2: Consumer (Processes data)
+        threading.Thread(target=self._processor_loop, daemon=True).start()
+
+    def _reader_loop(self) -> None:
+        """"""
 
         assert self._server_proc is not None, "Process not started"
         assert self._server_proc.stdout is not None
 
         try:
             for line_bytes in iter(self._server_proc.stdout.readline, b''):
-                line = self._read_output_line(line_bytes)
-                if line:
-                    self._process_line(line)
+                self._output_queue.put(line_bytes)
         except Exception as e:
             logger.error(f"Reader thread error: {e}")
         finally:
-            # If we reach here, the process has closed because we hit the '' sentinel
             self._server_proc.stdout.close()
+            self._stop_event.set()
             logger.warning("Minecraft output reader finished.")
+
+    def _processor_loop(self) -> None:
+        """Consumer: Pulls from queue and runs logic"""
+
+        while not self._stop_event.is_set() or not self._output_queue.empty():
+            line_bytes = None
+            try:
+                line_bytes = self._output_queue.get(timeout=1.0)
+                line_string = self._read_output_line(line_bytes)
+                if line_string:
+                    self._process_line(line_string)
+            except Empty:
+                continue
+            except Exception as e:
+                logger.error(f"Processor thread error: {e}")
+            finally:
+                if line_bytes is not None:
+                    self._output_queue.task_done()
 
     def _read_output_line(self,
                           line_bytes: bytes) -> str | None:
@@ -127,5 +156,9 @@ class ServerCommunicator:
                        command: str) -> None:
         """Sends commands to server"""
 
-        self._server_proc.stdin.write(command.encode('utf-8'))
-        self._server_proc.stdin.flush()
+        if self._server_proc and self._server_proc.stdin:
+            try:
+                self._server_proc.stdin.write(command.encode('utf-8'))
+                self._server_proc.stdin.flush()
+            except Exception as e:
+                logger.error(f"Failed to write to server stdin: {e}")
