@@ -34,21 +34,6 @@ class ServerCommunicator:
         # Thread 2: Consumer (Processes data)
         threading.Thread(target=self._processor_loop, daemon=True).start()
 
-        threading.Thread(target=self._ping, daemon=True).start()
-
-    def _ping(self) -> None:
-        """"""
-
-        while not self._stop_event.is_set() or not self._output_queue.empty():
-            try:
-                player_name = 'NonExistingPlayer123'
-                message = 'Some message'
-                command = f"tellraw {player_name} {message}\n"
-                self.send_to_server(command)
-                time.sleep(30)
-            except Exception as e:
-                logger.exception(e)
-
     def _reader_loop(self) -> None:
         """"""
 
