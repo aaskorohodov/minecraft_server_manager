@@ -1,6 +1,5 @@
 import threading
 import subprocess
-import time
 
 from loguru import logger
 from queue import Queue, Empty
