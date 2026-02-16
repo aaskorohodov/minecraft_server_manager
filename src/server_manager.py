@@ -141,6 +141,10 @@ class MinecraftServerManager:
                 **common_params
             )
 
+        import psutil
+        p = psutil.Process(self._server_proc.pid)
+        p.nice(psutil.HIGH_PRIORITY_CLASS)
+
         self._server_comm = ServerCommunicator(self._server_proc)
         self._server_comm.start_communication()
         logger.info("Server started")
