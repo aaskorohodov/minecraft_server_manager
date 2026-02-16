@@ -126,6 +126,7 @@ class Settings(BaseSettings):
     Attributes:
         MIN_MEM: In case no START_BAT provided, will be used to set as minimum RAM for server
         MAX_MEM: In case no START_BAT provided, will be used to set as maximum RAM for server
+        LOW_CPU: If set to True, will run java with optimizations flags
 
         paths: Paths to different files
         notifications: Settings for notifications
@@ -135,8 +136,9 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=(find_my_file(CONFIG_FILE_NAME)),
                                       extra='ignore')
 
-    MIN_MEM: int | None = 8
-    MAX_MEM: int | None = 12
+    MIN_MEM: int | None = 6
+    MAX_MEM: int | None = 6
+    LOW_CPU: bool       = True
 
     paths:         PathsSettings         = PathsSettings()
     notifications: NotificationsSettings = NotificationsSettings()
