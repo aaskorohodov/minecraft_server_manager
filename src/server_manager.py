@@ -89,6 +89,7 @@ class MinecraftServerManager:
         os.chdir(settings.paths.SERVER_DIR)
 
         aikar_flags = [
+            "-XX:-TieredCompilation",
             "-Djava.net.preferIPv4Stack=true",
             "-XX:+UseG1GC",
             "-XX:+ParallelRefProcEnabled",
