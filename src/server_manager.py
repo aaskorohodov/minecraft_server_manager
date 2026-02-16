@@ -119,7 +119,7 @@ class MinecraftServerManager:
             "stdin": subprocess.PIPE,
             "stdout": subprocess.PIPE,
             "stderr": subprocess.STDOUT,
-            "bufsize": -1,          # Line buffered: Much faster than 0
+            "bufsize": 0,          # Line buffered: Much faster than 0
         }
 
         if settings.paths.START_BAT:
