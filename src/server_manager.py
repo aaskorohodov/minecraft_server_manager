@@ -90,7 +90,6 @@ class MinecraftServerManager:
 
         aikar_flags = [
             "-XX:+UseCriticalJavaThreadPriority",
-            "-Djava.net.preferIPv4Stack=true",
             "-XX:+UseG1GC",
             "-XX:+ParallelRefProcEnabled",
             "-XX:MaxGCPauseMillis=200",
