@@ -41,7 +41,7 @@ class ServerCommunicator:
 
         try:
             for line_bytes in iter(self._server_proc.stdout.readline, b''):
-                self._output_queue.put(line_bytes)
+                self._output_queue.put_nowait(line_bytes)
         except Exception as e:
             logger.error(f"Reader thread error: {e}")
         finally:
