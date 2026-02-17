@@ -115,6 +115,7 @@ class DownDetector:
                 logger.exception(e)
                 time.sleep(interval)
 
+        time.sleep(2)
         self._conn.close()
 
     def _check_triggers_loop(self) -> None:

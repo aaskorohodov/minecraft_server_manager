@@ -9,7 +9,13 @@ from notifications.notificator import Notificator
 
 
 class ServerCommunicator:
-    """Communicates with java-server to get logs from it and write commands into it"""
+    """Communicates with java-server to get logs from it and write commands into it
+
+    Attributes:
+        server_proc: Process with Minecraft-Server
+        notificator: Instance of Notificator to get notifications for Users from
+        _output_queue: Queue to store Minecraft-Server's output
+        _stop_event: Thread-communicator"""
 
     def __init__(self,
                  server_proc: subprocess.Popen):
@@ -18,7 +24,7 @@ class ServerCommunicator:
         Args:
             server_proc: Process with java-server"""
 
-        self._server_proc: subprocess.Popen = server_proc
+        self.server_proc:  subprocess.Popen = server_proc
         self.notificator:  Notificator      = Notificator()
 
         self._output_queue: Queue           = Queue(maxsize=10000)
@@ -34,18 +40,18 @@ class ServerCommunicator:
         threading.Thread(target=self._processor_loop, daemon=True).start()
 
     def _reader_loop(self) -> None:
-        """"""
+        """Loop, responsible for reading Server's output and putting it into queue"""
 
-        assert self._server_proc is not None, "Process not started"
-        assert self._server_proc.stdout is not None
+        assert self.server_proc is not None, "Process not started"
+        assert self.server_proc.stdout is not None
 
         try:
-            for line_bytes in iter(self._server_proc.stdout.readline, b''):
+            for line_bytes in iter(self.server_proc.stdout.readline, b''):
                 self._output_queue.put_nowait(line_bytes)
         except Exception as e:
             logger.error(f"Reader thread error: {e}")
         finally:
-            self._server_proc.stdout.close()
+            self.server_proc.stdout.close()
             self._stop_event.set()
             logger.warning("Minecraft output reader finished.")
 
@@ -145,7 +151,7 @@ class ServerCommunicator:
         Args:
             player_name: Player to send message to"""
 
-        if self._server_proc and self._server_proc.stdin:
+        if self.server_proc and self.server_proc.stdin:
             message = self.notificator.get_login_message(player_name)
             if message:
                 command = f"tellraw {player_name} {message}\n"
@@ -156,9 +162,9 @@ class ServerCommunicator:
                        command: str) -> None:
         """Sends commands to server"""
 
-        if self._server_proc and self._server_proc.stdin:
+        if self.server_proc and self.server_proc.stdin:
             try:
-                self._server_proc.stdin.write(command.encode('utf-8'))
-                self._server_proc.stdin.flush()
+                self.server_proc.stdin.write(command.encode('utf-8'))
+                self.server_proc.stdin.flush()
             except Exception as e:
                 logger.error(f"Failed to write to server stdin: {e}")

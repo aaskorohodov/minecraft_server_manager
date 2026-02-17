@@ -122,7 +122,13 @@ class Notificator:
     def _update_user_data(self,
                           notification: Notification,
                           user: User) -> None:
-        """"""
+        """Updates counter of number of seen times for User->Notification
+
+        Creates Notification, if User does not have it yet. Skips notification, in case it has max_views set to 0
+
+        Args:
+            notification: Notification that was shown to User
+            user: User that we showed notification to"""
 
         if notification.max_views == 0:
             return
@@ -134,17 +140,26 @@ class Notificator:
 
     def _load_data(self,
                    filepath: str) -> list | dict:
-        """"""
+        """Reads raw-data from disk (expected to be Users and their data and Notifications)
+
+        Args:
+            filepath: Path to file to read data from
+        Returns:
+            List or Dict (json.load applied) - list for Notifications and dict for Users (and seen notifications)"""
 
         if not os.path.exists(filepath):
             return {}
-        with open(filepath, 'r', encoding='utf-8') as f:
+        with open(filepath, encoding='utf-8') as f:
             return json.load(f)
 
     def _save_data(self,
                    filepath: str,
-                   data: dict) -> None:
-        """"""
+                   data: dict | list) -> None:
+        """Saves data to dick
+
+        Args:
+            filepath: Where to save
+            data: What to save (list for Notifications and dict for Users (and seen notifications))"""
 
         with open(filepath, 'w', encoding='utf-8') as f:
             # indent=4 makes the file human-readable for manual edits

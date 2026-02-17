@@ -10,7 +10,6 @@ from typing import Optional
 from infi.systray import SysTrayIcon, traybar
 
 from main_comm import MainComm
-from utils.instance_checker import InstanceChecker
 
 
 class Trayer(SysTrayIcon):
