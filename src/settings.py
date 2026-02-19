@@ -62,6 +62,7 @@ class BackupSettings(BaseSettings):
     Attributes:
         BACKUP_TIME: Time for backing up world as string in format HH:mm
         BACK_UP_DAYS: Backups, made more days ago, will be automatically deleted
+        BACKUP_INTERVAL_DAYS: Interval between each backup in days (back up every x day)
         WAIT_BEFORE_BACKUP: Seconds to wait before zipping and sending backup, to let server restart
 
         WORLD_SENDER_ON: True, if world backup should be sent over HTTP somewhere (you need to launch receiver there)
@@ -78,9 +79,10 @@ class BackupSettings(BaseSettings):
         extra='ignore'
     )
 
-    BACKUP_TIME:        str = ''
-    BACK_UP_DAYS:       int = 5
-    WAIT_BEFORE_BACKUP: int = 180
+    BACKUP_TIME:          str = '07:00'
+    BACK_UP_DAYS:         int = 5
+    BACKUP_INTERVAL_DAYS: int = 3
+    WAIT_BEFORE_BACKUP:   int = 180
 
     WORLD_SENDER_ON: bool = True
     SEND_ATTEMPTS:   int  = 5
@@ -96,8 +98,7 @@ class DownDetectorSettings(BaseSettings):
 
     Attributes:
         CONNECTIVITY_URLS: URLS to check network with (will be pinged)
-        DETECTOR_ON: If down-detector should be launched
-    """
+        DETECTOR_ON: If down-detector should be launched"""
 
     model_config = SettingsConfigDict(
         env_prefix='DD_',

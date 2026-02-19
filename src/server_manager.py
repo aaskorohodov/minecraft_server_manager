@@ -43,7 +43,7 @@ class MinecraftServerManager:
                 self._backup_world()
                 self._restart_server()
                 self.main_comm.backup_now_trigger = False
-            time.sleep(1)
+            time.sleep(2)
         self._stop()
 
     def _check_backup_triggers(self) -> bool:
@@ -52,10 +52,17 @@ class MinecraftServerManager:
         Returns:
             True if back up should be executed"""
 
-        now = datetime.now().strftime("%H:%M")
-        its_time_to_backup = now == settings.backups.BACKUP_TIME
-        if its_time_to_backup or self.main_comm.backup_now_trigger:
-            if its_time_to_backup:
+        now = datetime.now()
+        its_time_to_backup = now.strftime("%H:%M") == settings.backups.BACKUP_TIME
+        its_day_to_backup  = False
+        if its_time_to_backup:
+            epoch             = datetime(1970, 1, 1)
+            days_since_epoch  = (now - epoch).days
+            interval          = settings.backups.BACKUP_INTERVAL_DAYS
+            its_day_to_backup = (int(days_since_epoch) % interval == 0)
+
+        if (its_time_to_backup and its_day_to_backup) or self.main_comm.backup_now_trigger:
+            if its_time_to_backup and its_day_to_backup:
                 logger.info(
                     f"Reached stop time {settings.backups.BACKUP_TIME}, creating world backup and restarting server..."
                 )
