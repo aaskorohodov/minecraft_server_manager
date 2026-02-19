@@ -24,7 +24,7 @@ class NotificationsSettings(BaseSettings):
     )
 
     ACTIVATED:           bool = True
-    START_MESSAGE_DELAY: int = 5
+    START_MESSAGE_DELAY: int  = 5
 
 
 class PathsSettings(BaseSettings):

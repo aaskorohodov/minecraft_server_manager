@@ -42,8 +42,26 @@ class DownDetector:
         """)
         self._conn.commit()
 
-    def _is_online(self,
-                   timeout=3) -> bool:
+    @staticmethod
+    def check_url(url: str,
+                  timeout=3) -> bool:
+        """Makes requests to check internet connection to the provided URL
+
+        Args:
+            url: URL to check
+            timeout: Timeout for requests
+        Returns:
+            True, in case internet works"""
+
+        try:
+            requests.get(url, timeout=timeout)
+            return True
+        except Exception:
+            pass
+        return False
+
+    @staticmethod
+    def _is_online(timeout=3) -> bool:
         """Makes requests to check internet connection
 
         Args:
