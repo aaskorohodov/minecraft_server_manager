@@ -109,7 +109,6 @@ class DownDetectorSettings(BaseSettings):
     CONNECTIVITY_URLS: list[str] = [
         "https://www.google.com",
         "https://1.1.1.1",
-        "https://example.com",
         "https://www.wikipedia.org",
         "https://www.python.org/",
         "https://www.bing.com/",
