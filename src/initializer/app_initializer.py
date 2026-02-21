@@ -71,7 +71,7 @@ class AppInitializer:
             datetime.datetime.strptime(settings.backups.BACKUP_TIME, '%H:%M')
             logger.info('Backup time ok...')
         except ValueError:
-            raise AssertionError(f'BACKUP_TIME is not valid. Check settings')
+            raise AssertionError('BACKUP_TIME is not valid. Check settings')
 
     def _check_paths(self) -> None:
         """Checks Paths from settings
