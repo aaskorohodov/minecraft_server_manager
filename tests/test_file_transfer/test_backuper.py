@@ -32,7 +32,7 @@ class TestFileBackuper:
         backup_dir.mkdir()
 
         mock_settings = MagicMock()
-        mock_settings.WORLD_DIRS = [str(world_dir)]
+        mock_settings.TO_BACKUP = [str(world_dir)]
         mock_settings.BACKUP_DIR = str(backup_dir)
 
         # Just in case
@@ -49,7 +49,7 @@ class TestFileBackuper:
 
         backuper = FileBackuper()
         # Should not raise any exception
-        backuper._validate_paths(mock_settings.WORLD_DIRS)
+        backuper._validate_paths(mock_settings.TO_BACKUP)
 
     def test_validate_paths_fails(self):
         """Ensures FileNotFoundError is raised for missing paths"""
@@ -70,7 +70,7 @@ class TestFileBackuper:
         backuper = FileBackuper()
         temp_dest = tmp_path / "manual_temp"
 
-        backuper._copy_folders_to_temp_location(str(temp_dest), mock_settings.WORLD_DIRS)
+        backuper._copy_backups_to_temp_location(str(temp_dest), mock_settings.TO_BACKUP)
 
         expected_file = temp_dest / "world1" / "level.dat"
         assert expected_file.exists()

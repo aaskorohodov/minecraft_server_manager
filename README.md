@@ -52,7 +52,7 @@ On start up you app will create an icon in tray with buttons:
 
 This manager will attempt to copy world, making backup. To do so, you will need to include in config.env:
 
-- WORLD_DIRS – folders with you world to back up it (ABS-Path)
+- TO_BACKUP – folders with you world to back it up (ABS-Path)
 - BACKUP_DIR – where to back up world
 - BACKUP_TIME – when to back up world
 - BACK_UP_DAYS – how many days to store backups (any backups older will be deleted automatically)
@@ -157,7 +157,7 @@ in Docker you will need to launch server directly, to do so keep START_BAT empty
 server.jar (Minecraft server itself) in this case automatically. Also set these settings.py:
 
 - SERVER_DIR 
-- WORLD_DIRS
+- TO_BACKUP
 - BACKUP_DIR 
 - MIN_MEM 
 - MAX_MEM 

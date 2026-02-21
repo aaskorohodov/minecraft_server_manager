@@ -32,7 +32,7 @@ class PathsSettings(BaseSettings):
 
     Attributes:
         SERVER_DIR: ABS-path to the folder with your Minecraft Server
-        WORLD_DIRS: ABS-path to the folders with your Minecraft Worlds (must start with 'world...')
+        TO_BACKUP: ABS-path to folders and files to back up
         BACKUP_DIR: ABS-path to the folder where world-backups will be saved
         START_BAT: ABS-Path to start.bat file that launches Minecraft Server
         SERVER_JAR: ABS-Path to .jar with server, if START_BAT not set
@@ -47,7 +47,7 @@ class PathsSettings(BaseSettings):
     )
 
     SERVER_DIR: str       = ''
-    WORLD_DIRS: list[str] = ''
+    TO_BACKUP:  list[str] = ''
     BACKUP_DIR: str       = ''
     START_BAT:  str       = ''
     SERVER_JAR: str       = ''

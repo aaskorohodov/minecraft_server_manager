@@ -85,9 +85,9 @@ class AppInitializer:
             logger.error(f'Path in settings.paths.SERVER_DIR ({settings.paths.SERVER_DIR}) is invalid!')
             all_good = False
 
-        for abs_path in settings.paths.WORLD_DIRS:
+        for abs_path in settings.paths.TO_BACKUP:
             if not os.path.exists(abs_path):
-                logger.error(f'Path in settings.paths.WORLD_DIRS ({abs_path}) is invalid!')
+                logger.error(f'Path in settings.paths.TO_BACKUP ({abs_path}) is invalid!')
                 all_good = False
 
         if not os.path.exists(settings.paths.BACKUP_DIR):

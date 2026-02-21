@@ -80,7 +80,7 @@ class MinecraftServerManager:
             self._stop_server()
 
             backuper = FileBackuper()
-            backuper.copy_world_to_temp_folder(settings.paths.WORLD_DIRS)
+            backuper.copy_backups_to_temp_folder(settings.paths.TO_BACKUP)
             logger.info("Main backup sequence completed")
             threading.Thread(target=self._zip_and_send_world, args=(backuper,)).start()
         except Exception as e:
@@ -212,20 +212,20 @@ class MinecraftServerManager:
         time.sleep(settings.backups.WAIT_BEFORE_BACKUP)
 
         try:
-            zip_world_path = backuper.zip_world()
-            if zip_world_path:
+            zipped_backup_path = backuper.zip_backup()
+            if zipped_backup_path:
                 logger.info('Deleting temp-copy')
                 backuper.delete_temp_folder()
             else:
-                logger.error('Was not able to create zip! Skipping deletion of world-copy as it it the only backup '
-                             'we have')
+                logger.error(
+                    'Was not able to create zip! Skipping deletion of world-copy as it is the only backup we have')
 
-            if zip_world_path and settings.backups.WORLD_SENDER_ON:
+            if zipped_backup_path and settings.backups.WORLD_SENDER_ON:
                 BackupsCleaner.cleanup_old_backups(settings.backups.BACK_UP_DAYS, settings.paths.BACKUP_DIR)
-                self._send_backup(file_path=zip_world_path)
-            elif zip_world_path and not settings.backups.WORLD_SENDER_ON:
+                self._send_backup(file_path=zipped_backup_path)
+            elif zipped_backup_path and not settings.backups.WORLD_SENDER_ON:
                 logger.warning('WORLD_SENDER_ON set to False in settings. Skipping sending')
-            elif not zip_world_path and settings.backups.WORLD_SENDER_ON:
+            elif not zipped_backup_path and settings.backups.WORLD_SENDER_ON:
                 logger.error('Zipping process failed, skipping sending')
         finally:
             self.main_comm.backup_now_trigger = False

@@ -1,17 +1,21 @@
 import os
 import shutil
 import zipfile
-from typing import Optional
 
 from tqdm import tqdm
 from loguru import logger
+from typing import Optional
 from datetime import datetime
 
 from settings import settings
 
 
 class FileBackuper:
-    """Logic, related to backing up world"""
+    """Logic, related to backing up world
+
+    Attributes:
+        temp_folder: ABS-path to folder with backups
+        zip_path: ABS-path to zipped backup"""
 
     def __init__(self):
         """Init"""
@@ -19,32 +23,32 @@ class FileBackuper:
         self.temp_folder: Optional[str] = None
         self.zip_path:    Optional[str] = None
 
-    def copy_world_to_temp_folder(self,
-                                  world_paths: list[str]) -> None:
-        """Creates copy of the worlds folders
+    def copy_backups_to_temp_folder(self,
+                                    backup_paths: list[str]) -> None:
+        """Creates copy of folders and files that require to be backed up
 
         Args:
-            world_paths: ABS-paths to world folders to copy them"""
+            backup_paths: ABS-paths to folders and files to copy them"""
 
-        self._validate_paths(world_paths)
+        self._validate_paths(backup_paths)
 
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        self.temp_folder = os.path.join(settings.paths.BACKUP_DIR, f"world_{timestamp}")
-        self.zip_path    = os.path.join(settings.paths.BACKUP_DIR, f"world_{timestamp}.zip")
+        self.temp_folder = os.path.join(settings.paths.BACKUP_DIR, f"backup_{timestamp}")
+        self.zip_path    = os.path.join(settings.paths.BACKUP_DIR, f"backup_{timestamp}.zip")
 
-        self._copy_folders_to_temp_location(self.temp_folder, world_paths)
+        self._copy_backups_to_temp_location(self.temp_folder, backup_paths)
 
-    def zip_world(self) -> str | None:
-        """Zips world folder (copy) and deletes temp-folder (copy of the world)
+    def zip_backup(self) -> str | None:
+        """Zips backups folders and files (copy) and deletes temp-folder (copy of backup files and folders)
 
         Returns:
-            ABS-zip-path, if successfully zipped"""
+            ABS-zip-path, if successfully zipped, to backup-file"""
 
-        logger.info('Zipping world...')
+        logger.info('Zipping backups...')
 
         try:
             self._zip_folders(self.temp_folder, self.zip_path)
-            logger.info('Successfully zipped world!')
+            logger.info('Successfully zipped backups!')
             return self.zip_path
         except Exception as e:
             logger.exception(e)
@@ -68,24 +72,42 @@ class FileBackuper:
         if some_path_is_wrong:
             raise FileNotFoundError("Backup canceled as some path is wrong")
 
-    def _copy_folders_to_temp_location(self,
+    def _copy_backups_to_temp_location(self,
                                        temp_folder: str,
-                                       world_paths: list[str]) -> None:
+                                       backups_paths: list[str]) -> None:
         """Copies worlds (or single world) into tempt folder
 
         Args:
             temp_folder: Folder to copy worlds into
-            world_paths: List with paths to worlds, to copy them into temp_folder"""
+            backups_paths: List with paths to folders and files, to copy them into temp_folder"""
 
         os.makedirs(temp_folder, exist_ok=True)
 
-        for world_path in world_paths:
-            folder_name = os.path.basename(world_path)
-            destination = os.path.join(temp_folder, folder_name)
+        for backup_item_path in backups_paths:
+            original_backup_item_name = os.path.basename(backup_item_path)
+            destination               = os.path.join(temp_folder, original_backup_item_name)
 
-            logger.info(f"Copying {folder_name} to temp directory {temp_folder}")
-            shutil.copytree(world_path, destination)
-            logger.info('Copied world successfully')
+            # Collision Handling Logic
+            counter = 1
+            # Split extension only for files; directories keep their full name
+            name_part, extension = os.path.splitext(original_backup_item_name)
+
+            while os.path.exists(destination):
+                new_name = f"{name_part}_{counter}{extension}"
+                destination = os.path.join(temp_folder, new_name)
+                counter += 1
+
+            final_name = os.path.basename(destination)
+            if final_name != original_backup_item_name:
+                logger.warning(f"Collision detected! Renaming {original_backup_item_name} -> {final_name}")
+
+            logger.info(f"Copying {original_backup_item_name} to temp directory {temp_folder}")
+            if os.path.isdir(backup_item_path):
+                shutil.copytree(backup_item_path, destination)
+            else:
+                shutil.copy2(backup_item_path, destination)  # copy2 preserves metadata
+
+            logger.info(f'Copied {original_backup_item_name} successfully')
 
     def _zip_folders(self,
                      temp_copy: str,
