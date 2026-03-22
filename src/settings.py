@@ -47,7 +47,7 @@ class PathsSettings(BaseSettings):
     )
 
     SERVER_DIR: str       = ''
-    TO_BACKUP:  list[str] = ''
+    TO_BACKUP:  list[str] = ['']
     BACKUP_DIR: str       = ''
     START_BAT:  str       = ''
     SERVER_JAR: str       = ''
@@ -88,7 +88,7 @@ class BackupSettings(BaseSettings):
     SEND_ATTEMPTS:   int  = 5
 
     RECEIVER_IP:    str       = '127.0.0.1'
-    RECEIVER_PORT:  int       = '8123'
+    RECEIVER_PORT:  int       = 8123
     RECEIVER_TOKEN: SecretStr = SecretStr('')
     RECEIVER_DIR:   str       = ''
 
