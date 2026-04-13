@@ -146,6 +146,12 @@ class AntiBotSettings(BaseSettings):
         SPAWN_POINT_X: X of spawn point
         SPAWN_POINT_Z: Z of spawn point"""
 
+    model_config = SettingsConfigDict(
+        env_prefix='AB_',
+        env_file=(find_my_file(CONFIG_FILE_NAME)),
+        extra='ignore'
+    )
+
     ON:                  bool = True
     WINDOW_SIZE_SECONDS: int  = 2
     LOGINS_THRESHOLD:    int  = 2
