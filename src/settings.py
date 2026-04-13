@@ -153,8 +153,8 @@ class AntiBotSettings(BaseSettings):
     )
 
     ON:                  bool = True
-    WINDOW_SIZE_SECONDS: int  = 2
-    LOGINS_THRESHOLD:    int  = 2
+    WINDOW_SIZE_SECONDS: int  = 3
+    LOGINS_THRESHOLD:    int  = 5
     RUN_EVERY:           int  = 5
 
     AGGRESSIVE_COMMAND:                      str       = 'antibot_aggressive'
