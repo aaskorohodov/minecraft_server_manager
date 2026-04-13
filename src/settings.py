@@ -120,6 +120,61 @@ class DownDetectorSettings(BaseSettings):
     DETECTOR_ON: bool = True
 
 
+class AntiBotSettings(BaseSettings):
+    """Settings for ANtiBot
+
+    Attributes:
+        ON: To turn AntiBot or not
+        WINDOW_SIZE_SECONDS: Seconds-window, in which logins of several Users will be considered bot-atack
+        LOGINS_THRESHOLD: How many Users should login in WINDOW_SIZE_SECONDS, for all of them to be considered bots
+        RUN_EVERY: Run every cycle, to skip others, to free resources. May be set to 1 or more
+
+        AGGRESSIVE_COMMAND: Command to activate aggressive antibot mode to initiate bans
+        AGGRESSIVE_LENGTH_SEC: How long to run in aggressive mode
+        ACCEPT_FROM_USERS: From which Users command for aggressive mode should be accepted
+        AGGRESSIVE_BAN_IP_AFTER_IP_KICKED_TIMES: How many kicks should IP get to get banned (entire IP will be banned)
+        AGGRESSIVE_RUN_EVERY: RUN_EVERY will be reduced to this number, while agressive mode is on
+
+        KICK_STATIC_IN_SPAWN_POINT_AFTER_SEC: After this many seconds user will be kicked if not moved from spawn point
+        KICK_STATIC_IN_SPAWN_AREA_AFTER_SEC: After this many seconds user will be kicked if not left spawn area
+
+        SPAWN_X_MIN: Min X of spawn area
+        SPAWN_X_MAX: Max X of spawn area
+        SPAWN_Z_MIN: Min Z of spawn area
+        SPAWN_Z_MAX: Max Z of spawn area
+
+        SPAWN_POINT_X: X of spawn point
+        SPAWN_POINT_Z: Z of spawn point"""
+
+    ON:                  bool = True
+    WINDOW_SIZE_SECONDS: int  = 2
+    LOGINS_THRESHOLD:    int  = 2
+    RUN_EVERY:           int  = 5
+
+    AGGRESSIVE_COMMAND:         str       = 'antibot_aggressive'
+    AGGRESSIVE_LENGTH_SEC:      int       = 60
+    ACCEPT_FROM_USERS:          list[str] = ['Name', 'by_danilov']
+    AGGRESSIVE_BAN_IP_AFTER_IP_KICKED_TIMES: int       = 2
+    AGGRESSIVE_RUN_EVERY:       int       = 1
+
+    KICK_STATIC_IN_SPAWN_POINT_AFTER_SEC: int = 20
+    KICK_STATIC_IN_SPAWN_AREA_AFTER_SEC:  int = 40
+    KICK_COOLDOWN_DEFAULT_SECONDS:        int = 40
+    KICK_COOLDOWN_STATIC_AREA_SECONDS:    int = 50
+    KICK_COOLDOWN_STATIC_POINT_SECONDS:   int = 60
+
+    BAN_IP_IF_KICKED_USERS_NUMBER:       int = 2
+    BAN_IP_IF_SINGLE_USER_KICKED_NUMBER: int = 20
+
+    SPAWN_X_MIN:         int = 5545
+    SPAWN_X_MAX:         int = 5562
+    SPAWN_Z_MIN:         int = -4586
+    SPAWN_Z_MAX:         int = -4580
+
+    SPAWN_POINT_X:       int = 5556
+    SPAWN_POINT_Z:       int = -4584
+
+
 class Settings(BaseSettings):
     """Apps main settings
 
@@ -140,10 +195,13 @@ class Settings(BaseSettings):
     MAX_MEM: int | None = 6
     LOW_CPU: bool       = True
 
+    LOGS_DEPTH: str = 'DEBUG'
+
     paths:         PathsSettings         = PathsSettings()
     notifications: NotificationsSettings = NotificationsSettings()
     backups:       BackupSettings        = BackupSettings()
     down_detector: DownDetectorSettings  = DownDetectorSettings()
+    antibot:       AntiBotSettings       = AntiBotSettings()
 
 
 logger.info(f'Found config.env at: {find_my_file(CONFIG_FILE_NAME)}')

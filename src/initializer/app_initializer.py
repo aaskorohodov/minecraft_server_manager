@@ -168,7 +168,8 @@ class AppInitializer:
             colorize=True,
             enqueue=True,
             backtrace=True,
-            diagnose=True
+            diagnose=True,
+            level=settings.LOGS_DEPTH
         )
         # logger.add(lambda msg: print(msg, end=""), colorize=True)
 

@@ -8,6 +8,7 @@ from datetime import datetime
 
 from settings import settings
 from main_comm import MainComm
+from anti_bot.anti_bot import AntiBot
 from file_transfer.backuper import FileBackuper
 from file_transfer.sender import HttpFileSender
 from file_transfer.cleaner import BackupsCleaner
@@ -31,6 +32,7 @@ class MinecraftServerManager:
         self._server_proc: subprocess.Popen | None   = None
         self._running:     bool                      = False
         self._server_comm: ServerCommunicator | None = None
+        self._anti_bot:    AntiBot | None            = None
 
     def run(self) -> None:
         """Main loop"""
@@ -38,11 +40,18 @@ class MinecraftServerManager:
         self._running = True
         self._start_server()
 
+        if settings.antibot.ON:
+            self._anti_bot = AntiBot(self._server_comm)
+            self._server_comm.antibot = self._anti_bot
+
         while self._running and not self.main_comm.stop_server:
             if self._check_backup_triggers():
                 self._backup_world()
                 self._restart_server()
                 self.main_comm.backup_now_trigger = False
+
+            if self._anti_bot:
+                self._anti_bot.check_players()
             time.sleep(2)
         self._stop()
 

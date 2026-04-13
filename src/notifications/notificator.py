@@ -1,6 +1,7 @@
 import os
 import json
 import random
+import threading
 
 from loguru import logger
 
@@ -16,7 +17,8 @@ class Notificator:
 
         Checks activation status"""
 
-        self.activated: bool = False
+        self.activated:  bool           = False
+        self._file_lock: threading.Lock = threading.Lock()
 
         if settings.notifications.ACTIVATED:
             self.activated = self._check_files()
@@ -147,20 +149,22 @@ class Notificator:
         Returns:
             List or Dict (json.load applied) - list for Notifications and dict for Users (and seen notifications)"""
 
-        if not os.path.exists(filepath):
-            return {}
-        with open(filepath, encoding='utf-8') as f:
-            return json.load(f)
+        with self._file_lock:
+            if not os.path.exists(filepath):
+                return {}
+            with open(filepath, encoding='utf-8') as f:
+                return json.load(f)
 
     def _save_data(self,
                    filepath: str,
                    data: dict | list) -> None:
-        """Saves data to dick
+        """Saves data to dict
 
         Args:
             filepath: Where to save
             data: What to save (list for Notifications and dict for Users (and seen notifications))"""
 
-        with open(filepath, 'w', encoding='utf-8') as f:
-            # indent=4 makes the file human-readable for manual edits
-            json.dump(data, f, indent=4, ensure_ascii=False)
+        with self._file_lock:
+            with open(filepath, 'w', encoding='utf-8') as f:
+                # indent=4 makes the file human-readable for manual edits
+                json.dump(data, f, indent=4, ensure_ascii=False)

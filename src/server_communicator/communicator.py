@@ -2,10 +2,13 @@ import threading
 import subprocess
 
 from loguru import logger
+from typing import Optional
 from queue import Queue, Empty
 
 from settings import settings
+from anti_bot.anti_bot import AntiBot
 from notifications.notificator import Notificator
+from server_communicator.logs_extractor import LogsExtractor
 
 
 class ServerCommunicator:
@@ -18,14 +21,17 @@ class ServerCommunicator:
         _stop_event: Thread-communicator"""
 
     def __init__(self,
-                 server_proc: subprocess.Popen):
+                 server_proc: subprocess.Popen,
+                 antibot: Optional[AntiBot] = None):
         """Init
 
         Args:
-            server_proc: Process with java-server"""
+            server_proc: Process with java-server
+            antibot: Instance of AntiBot to track bots"""
 
-        self.server_proc:  subprocess.Popen = server_proc
-        self.notificator:  Notificator      = Notificator()
+        self.server_proc:  subprocess.Popen  = server_proc
+        self.notificator:  Notificator       = Notificator()
+        self.antibot:      Optional[AntiBot] = antibot
 
         self._output_queue: Queue           = Queue(maxsize=10000)
         self._stop_event:   threading.Event = threading.Event()
@@ -99,16 +105,45 @@ class ServerCommunicator:
         if self.notificator.activated:
             self._check_login_event(line)
 
+        if settings.antibot.ON:
+            self._check_antibot_events(line)
+
+    def _check_antibot_events(self,
+                              clean_line: str) -> None:
+        """Check logs in search of events, related to antibot specifically
+
+        Args:
+            clean_line: Log from server"""
+
+        try:
+            if "UUID of player" in clean_line:
+                user_uuid, user_name = LogsExtractor.extract_uuid_and_name(clean_line)
+                logger.debug(f'Parsed {user_name=}, {user_uuid=}')
+                self.antibot.add_user(user_uuid=user_uuid, user_name=user_name)
+
+            if 'Teleported' in clean_line and 'to' in clean_line:
+                updated_coords, user_name = LogsExtractor.extract_updated_coords(clean_line)
+                logger.debug(f'Parsed {updated_coords=}')
+                self.antibot.update_current_coordinates(user_name=user_name, coordinates_str=updated_coords)
+
+            if settings.antibot.AGGRESSIVE_COMMAND in clean_line:
+                for root_user in settings.antibot.ACCEPT_FROM_USERS:
+                    if root_user in clean_line:
+                        self.antibot.become_aggressive()
+
+        except Exception as e:
+            logger.exception(e)
+
     def _check_login_event(self,
                            clean_line: str) -> None:
-        """Checks if Player logged in and initiates login message if so
+        """Checks if Player logged in and initiates login message, and extracts data for antibot
 
         Args:
             clean_line: Output from server to check if this is a login event"""
 
         try:
             if "logged in with entity id" in clean_line and "[/ " not in clean_line:
-                user_name = self._extract_user_name(clean_line)
+                user_name = LogsExtractor.extract_user_name(clean_line)
                 if user_name:
                     logger.info(f"Scheduling welcome message for {user_name} "
                                 f"in {settings.notifications.START_MESSAGE_DELAY}s")
@@ -119,30 +154,27 @@ class ServerCommunicator:
                         args=[user_name]
                     )
                     timer.start()
+
+                    self._initiate_antibot(clean_line, user_name)
+
         except Exception as e:
             logger.exception(e)
 
-    def _extract_user_name(self,
-                           clean_line: str) -> str:
-        """Extracts UserName from server's output
+    def _initiate_antibot(self,
+                          clean_line: str,
+                          user_name: str) -> None:
+        """Extract initial data for antibot
 
         Args:
-            clean_line: Output from server
-        Returns:
-            UserName"""
+            clean_line: Log from server
+            user_name: UserName from log from serve"""
 
-        # Step A: Get everything after the Minecraft log prefix "]: "
-        # This leaves us with: "Name[/188.126.89.172:58488] logged in..."
-        after_prefix = clean_line.split("]: ")[-1]
-
-        # Step B: Get everything before the IP bracket "[/"
-        # This leaves us with: "Name"
-        username = after_prefix.split("[/")[0]
-
-        # Step C: Clean any accidental whitespace
-        username = username.strip()
-
-        return username
+        if settings.antibot.ON:
+            login_coords, ip_address = LogsExtractor.extract_login_coords_and_ip(clean_line)
+            logger.debug(f'Parsed {login_coords=}, {ip_address=}, {user_name=}')
+            self.antibot.save_login_coordinates_and_ip(login_coordinates_str=login_coords,
+                                                       ip_address=ip_address,
+                                                       user_name=user_name)
 
     def _send_login_message(self,
                             player_name: str) -> None:
@@ -164,6 +196,8 @@ class ServerCommunicator:
 
         if self.server_proc and self.server_proc.stdin:
             try:
+                if not command.endswith('\n'):
+                    command += '\n'
                 self.server_proc.stdin.write(command.encode('utf-8'))
                 self.server_proc.stdin.flush()
             except Exception as e:
