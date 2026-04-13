@@ -157,28 +157,28 @@ class AntiBotSettings(BaseSettings):
     LOGINS_THRESHOLD:    int  = 2
     RUN_EVERY:           int  = 5
 
-    AGGRESSIVE_COMMAND:         str       = 'antibot_aggressive'
-    AGGRESSIVE_LENGTH_SEC:      int       = 60
-    ACCEPT_FROM_USERS:          list[str] = ['Name', 'by_danilov']
+    AGGRESSIVE_COMMAND:                      str       = 'antibot_aggressive'
+    AGGRESSIVE_LENGTH_SEC:                   int       = 180
+    ACCEPT_FROM_USERS:                       list[str] = ['Name', 'by_danilov']
     AGGRESSIVE_BAN_IP_AFTER_IP_KICKED_TIMES: int       = 2
-    AGGRESSIVE_RUN_EVERY:       int       = 1
+    AGGRESSIVE_RUN_EVERY:                    int       = 1
 
-    KICK_STATIC_IN_SPAWN_POINT_AFTER_SEC: int = 20
-    KICK_STATIC_IN_SPAWN_AREA_AFTER_SEC:  int = 40
+    KICK_STATIC_IN_SPAWN_POINT_AFTER_SEC: int = 80
+    KICK_STATIC_IN_SPAWN_AREA_AFTER_SEC:  int = 120
     KICK_COOLDOWN_DEFAULT_SECONDS:        int = 40
-    KICK_COOLDOWN_STATIC_AREA_SECONDS:    int = 50
-    KICK_COOLDOWN_STATIC_POINT_SECONDS:   int = 60
+    KICK_COOLDOWN_STATIC_AREA_SECONDS:    int = 60
+    KICK_COOLDOWN_STATIC_POINT_SECONDS:   int = 100
 
-    BAN_IP_IF_KICKED_USERS_NUMBER:       int = 2
-    BAN_IP_IF_SINGLE_USER_KICKED_NUMBER: int = 20
+    BAN_IP_IF_KICKED_USERS_NUMBER:       int = 3
+    BAN_IP_IF_SINGLE_USER_KICKED_NUMBER: int = 5
 
-    SPAWN_X_MIN:         int = 5545
+    SPAWN_X_MIN:         int = 5552
     SPAWN_X_MAX:         int = 5562
     SPAWN_Z_MIN:         int = -4586
     SPAWN_Z_MAX:         int = -4580
 
-    SPAWN_POINT_X:       int = 5556
-    SPAWN_POINT_Z:       int = -4584
+    SPAWN_POINT_X:       int = 5560
+    SPAWN_POINT_Z:       int = -4583
 
 
 class Settings(BaseSettings):

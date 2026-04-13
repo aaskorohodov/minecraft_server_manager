@@ -136,6 +136,8 @@ class KickedIp:
 
     Attributes:
         ip: IP that was kicked
+        kicks_counter: Overall number of kicks on this IP (any players, all times combined)
+        banned: True, if IP was already banned
         kicked_user_names: User, that was kicked on that IP"""
 
     def __init__(self,
