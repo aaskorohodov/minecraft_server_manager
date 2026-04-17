@@ -124,12 +124,18 @@ class ServerCommunicator:
             if 'Teleported' in clean_line and 'to' in clean_line:
                 updated_coords, user_name = LogsExtractor.extract_updated_coords(clean_line)
                 logger.debug(f'Parsed {updated_coords=}')
-                self.antibot.update_current_coordinates(user_name=user_name, coordinates_str=updated_coords)
+                self.antibot.update_last_know_coords(user_name=user_name, coordinates_str=updated_coords)
 
             if settings.antibot.AGGRESSIVE_COMMAND in clean_line:
                 for root_user in settings.antibot.ACCEPT_FROM_USERS:
                     if root_user in clean_line:
                         self.antibot.become_aggressive()
+
+            if settings.antibot.UNBAN_IPS_COMMAND:
+                if settings.antibot.UNBAN_IPS_COMMAND in clean_line:
+                    for root_user in settings.antibot.ACCEPT_FROM_USERS:
+                        if root_user in clean_line:
+                            self.antibot.unban_ips(unban_all=True)
 
         except Exception as e:
             logger.exception(e)
@@ -155,14 +161,14 @@ class ServerCommunicator:
                     )
                     timer.start()
 
-                    self._initiate_antibot(clean_line, user_name)
+                    self._save_login_coords(clean_line, user_name)
 
         except Exception as e:
             logger.exception(e)
 
-    def _initiate_antibot(self,
-                          clean_line: str,
-                          user_name: str) -> None:
+    def _save_login_coords(self,
+                           clean_line: str,
+                           user_name: str) -> None:
         """Extract initial data for antibot
 
         Args:

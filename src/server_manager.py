@@ -40,10 +40,6 @@ class MinecraftServerManager:
         self._running = True
         self._start_server()
 
-        if settings.antibot.ON:
-            self._anti_bot = AntiBot(self._server_comm)
-            self._server_comm.antibot = self._anti_bot
-
         while self._running and not self.main_comm.stop_server:
             if self._check_backup_triggers():
                 self._backup_world()
@@ -163,6 +159,14 @@ class MinecraftServerManager:
 
         self._server_comm = ServerCommunicator(self._server_proc)
         self._server_comm.start_communication()
+
+        if settings.antibot.ON:
+            logger.info('Antibot started')
+            self._anti_bot = AntiBot(self._server_comm)
+            self._server_comm.antibot = self._anti_bot
+        else:
+            logger.warning('Antibot if off')
+
         logger.info("Server started")
 
     def _restart_server(self) -> None:
@@ -179,6 +183,12 @@ class MinecraftServerManager:
 
     def _stop_server(self) -> None:
         """Gracefully stop the server"""
+
+        try:
+            self._anti_bot.unban_ips(unban_all=True)
+        except Exception as e:
+            logger.error('Was not able to unban IPs!')
+            logger.exception(e)
 
         if self._server_proc and self._server_proc.stdin:
             try:

@@ -129,14 +129,27 @@ class AntiBotSettings(BaseSettings):
         LOGINS_THRESHOLD: How many Users should login in WINDOW_SIZE_SECONDS, for all of them to be considered bots
         RUN_EVERY: Run every cycle, to skip others, to free resources. May be set to 1 or more
 
+        LOGINS_ALLOWED_IN_TS: How many logins allowed in some period of time
+        LOGINS_PERIOD_SEC: Period of time to track LOGINS_ALLOWED_IN_TS
+
         AGGRESSIVE_COMMAND: Command to activate aggressive antibot mode to initiate bans
+        UNBAN_IPS_COMMAND: Command to unban all Users now
         AGGRESSIVE_LENGTH_SEC: How long to run in aggressive mode
         ACCEPT_FROM_USERS: From which Users command for aggressive mode should be accepted
         AGGRESSIVE_BAN_IP_AFTER_IP_KICKED_TIMES: How many kicks should IP get to get banned (entire IP will be banned)
-        AGGRESSIVE_RUN_EVERY: RUN_EVERY will be reduced to this number, while agressive mode is on
+        AGGRESSIVE_RUN_EVERY: RUN_EVERY will be reduced to this number, while aggressive mode is on
 
         KICK_STATIC_IN_SPAWN_POINT_AFTER_SEC: After this many seconds user will be kicked if not moved from spawn point
         KICK_STATIC_IN_SPAWN_AREA_AFTER_SEC: After this many seconds user will be kicked if not left spawn area
+        KICK_COOLDOWN_DEFAULT_SECONDS: Default cooldown for kicks
+        KICK_COOLDOWN_STATIC_AREA_SECONDS: Cooldown for kicks for users, that are in static in spawn area
+        KICK_COOLDOWN_STATIC_POINT_SECONDS: Cooldown for kicks for users, that are in static in spawn point
+
+        BAN_IP_IF_KICKED_USERS_NUMBER: IP will be banned, in case there are this number of kicked Users on IP
+        BAN_IP_IF_SINGLE_USER_KICKED_NUMBER: IP will be banned, in case there is a single User with this number of kicks
+        BAN_IP_FOR_SECONDS: IP will be banned for this number of seconds
+        BAN_IP_FOR_MINUTES: IP will be banned for this number of minutes
+        BAN_IP_FOR_HOURS: IP will be banned for this number of hours
 
         SPAWN_X_MIN: Min X of spawn area
         SPAWN_X_MAX: Max X of spawn area
@@ -144,6 +157,7 @@ class AntiBotSettings(BaseSettings):
         SPAWN_Z_MAX: Max Z of spawn area
 
         SPAWN_POINT_X: X of spawn point
+        SPAWN_POINT_Y: Y of the spawn point
         SPAWN_POINT_Z: Z of spawn point"""
 
     model_config = SettingsConfigDict(
@@ -157,20 +171,27 @@ class AntiBotSettings(BaseSettings):
     LOGINS_THRESHOLD:    int  = 5
     RUN_EVERY:           int  = 5
 
+    LOGINS_ALLOWED_IN_TS: int = 6
+    LOGINS_PERIOD_SEC:    int = 1000
+
     AGGRESSIVE_COMMAND:                      str       = 'antibot_aggressive'
+    UNBAN_IPS_COMMAND:                       str       = 'unban_ips'
     AGGRESSIVE_LENGTH_SEC:                   int       = 180
     ACCEPT_FROM_USERS:                       list[str] = ['Name', 'by_danilov']
-    AGGRESSIVE_BAN_IP_AFTER_IP_KICKED_TIMES: int       = 2
+    AGGRESSIVE_BAN_IP_AFTER_IP_KICKED_TIMES: int       = 3
     AGGRESSIVE_RUN_EVERY:                    int       = 1
 
-    KICK_STATIC_IN_SPAWN_POINT_AFTER_SEC: int = 80
+    KICK_STATIC_IN_SPAWN_POINT_AFTER_SEC: int = 60
     KICK_STATIC_IN_SPAWN_AREA_AFTER_SEC:  int = 120
     KICK_COOLDOWN_DEFAULT_SECONDS:        int = 40
     KICK_COOLDOWN_STATIC_AREA_SECONDS:    int = 60
-    KICK_COOLDOWN_STATIC_POINT_SECONDS:   int = 100
+    KICK_COOLDOWN_STATIC_POINT_SECONDS:   int = 120
 
     BAN_IP_IF_KICKED_USERS_NUMBER:       int = 3
     BAN_IP_IF_SINGLE_USER_KICKED_NUMBER: int = 5
+    BAN_IP_FOR_SECONDS:                  int = 0
+    BAN_IP_FOR_MINUTES:                  int = 30
+    BAN_IP_FOR_HOURS:                    int = 0
 
     SPAWN_X_MIN:         int = 5552
     SPAWN_X_MAX:         int = 5562
@@ -178,6 +199,7 @@ class AntiBotSettings(BaseSettings):
     SPAWN_Z_MAX:         int = -4580
 
     SPAWN_POINT_X:       int = 5560
+    SPAWN_POINT_Y:       int = 87
     SPAWN_POINT_Z:       int = -4583
 
 
@@ -197,8 +219,8 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=(find_my_file(CONFIG_FILE_NAME)),
                                       extra='ignore')
 
-    MIN_MEM: int | None = 6
-    MAX_MEM: int | None = 6
+    MIN_MEM: int | None = 3
+    MAX_MEM: int | None = 3
     LOW_CPU: bool       = True
 
     LOGS_DEPTH: str = 'DEBUG'
