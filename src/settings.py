@@ -219,8 +219,8 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=(find_my_file(CONFIG_FILE_NAME)),
                                       extra='ignore')
 
-    MIN_MEM: int | None = 3
-    MAX_MEM: int | None = 3
+    MIN_MEM: int | None = 6
+    MAX_MEM: int | None = 6
     LOW_CPU: bool       = True
 
     LOGS_DEPTH: str = 'DEBUG'
