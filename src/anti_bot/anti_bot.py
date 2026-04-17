@@ -3,6 +3,7 @@ import threading
 from loguru import logger
 from typing import TYPE_CHECKING
 
+from settings import settings
 from anti_bot.cycler import Cycler
 from anti_bot.kicker import Kicker
 from anti_bot.storage import STORAGE
@@ -266,7 +267,8 @@ class AntiBot:
 
         except Exception as e:
             logger.error('Error during parsing coordinates!')
-            logger.exception(e)
+            if settings.LOGS_DEPTH != 'INFO':
+                logger.exception(e)
 
     def _untrack_moved_users(self) -> None:
         """Forgets User, who moved or were spawned outside spawn area"""

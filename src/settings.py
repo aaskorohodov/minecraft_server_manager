@@ -223,7 +223,7 @@ class Settings(BaseSettings):
     MAX_MEM: int | None = 6
     LOW_CPU: bool       = True
 
-    LOGS_DEPTH: str = 'DEBUG'
+    LOGS_DEPTH: str = 'INFO'
 
     paths:         PathsSettings         = PathsSettings()
     notifications: NotificationsSettings = NotificationsSettings()
