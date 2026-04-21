@@ -5,6 +5,12 @@
   * [World backup](#world-backup)
     * [Local receiver](#local-receiver)
   * [Down detector](#down-detector)
+  * [AntiBot](#antibot)
+    * [Basic protection by movement detection](#basic-protection-by-movement-detection)
+    * [Fast attack](#fast-attack)
+    * [IP protection](#ip-protection)
+    * [Unbanning](#unbanning)
+    * [Aggressive mode and commands](#aggressive-mode-and-commands)
 * [How to use](#how-to-use)
   * [Windows](#windows)
     * [Getting server ready](#getting-server-ready)
@@ -22,6 +28,7 @@ Minimalistic Manager for Minecraft Sever, designed for Windows
 - Can automatically clean old backups
 - Can send backups to some remote server via HTTP
 - Checks if network is available and writes results in locally created DB (uptime counter)
+- AntiBot service
 
 ## Starting with BAT
 
@@ -92,6 +99,91 @@ You can check statistics by directly accessing locally created DB (sqlite), by u
 plot_drawer.py. In case using trayer or plot_drawer.py you will get a graph with on-off time.
 
 When writing to DB, down-detector will only write change in status. This is to reduce DB size
+
+
+## AntiBot
+
+Protects server from bot-attacks: fast and slow ones.
+
+### Basic protection by movement detection
+
+Basic protection checks players initial coordinates and current coordinates after each player logs in. Having this
+data AntiBot can figure out if player spawned in spawn area and if they're moving. The idea is to create such a spawn
+area, which can not be left by bot, but can easily by a real player.
+
+To do so AntiBot requires coordinates of the spawn area in settings (or config.env):
+
+- SPAWN_X_MIN
+- SPAWN_X_MAX
+- SPAWN_Z_MIN
+- SPAWN_Z_MAX
+- SPAWN_POINT_X
+- SPAWN_POINT_Y
+- SPAWN_POINT_Z
+
+Having these values, AntiBot can determine if player is moving, have left spawn or logged in outside spawn. In case 
+player is static or can not leave spawn - player will be kicked. You can set up timings with:
+
+- KICK_STATIC_IN_SPAWN_POINT_AFTER_SEC
+- KICK_STATIC_IN_SPAWN_AREA_AFTER_SEC
+
+### Fast attack
+
+This is a kind of attack, when bots loging in fast in huge quantities. AntiBot saves login time and groups players,
+who logged in a small time-window and kicks such users. You can set this with:
+
+- LOGINS_ALLOWED_IN_TS
+- LOGINS_PERIOD_SEC
+
+With these 2 values you will be able to set a time-window (ex: 5 seconds) and number of players (5) - if 5 players 
+logged in that 5 seconds window - all of them will be considered bots and kicked
+
+### IP protection
+
+AntiBot keeps track of IPs, to ban IPs that have lots of violations, which includes:
+
+- Lots of kicks for a single user on an IP (BAN_IP_IF_KICKED_USERS_NUMBER)
+- Lots of users with kicks from same IP (BAN_IP_IF_SINGLE_USER_KICKED_NUMBER)
+
+After detecting an IP with lots of kicks AntiBot bans such IP.
+
+### Unbanning
+
+By default, AntiBot will unban all banned IPs after some time, which can be set in settings:
+
+- BAN_IP_FOR_SECONDS
+- BAN_IP_FOR_MINUTES
+- BAN_IP_FOR_HOURS
+
+You can leave each value to be as big as needed, for example 10_000 seconds.
+
+If an IP was banned and unbanned, on next ban this IP will receive x2 time in ban automatically.
+
+Each IP, that was banned automatically with AntiBot, will be unbanned after this amount of time. If you would like NOT
+to unban such IPs, you can set time to some huge number. 
+
+### Aggressive mode and commands
+
+You can set usernames to accept commands from in settings (or config.env):
+
+- ACCEPT_FROM_USERS
+
+Users in this list will be able to launch aggressive mode, in which AntiBot will make its checks faster (=> faster
+kicks and bans) and will ban IPs under smaller threshold, which is configured in:
+
+- AGGRESSIVE_BAN_IP_AFTER_IP_KICKED_TIMES
+
+Aggressive mode will be automatically turned off after some seconds, set with:
+
+- AGGRESSIVE_LENGTH_SEC
+
+In case OP players would like to unban all IPs, that were ban during last ban-session, they can use command from 
+settings:
+
+- UNBAN_IPS_COMMAND (default is unban_ips)
+
+This will unban all currently banned IPs, which does not include any manual banned IPs.
+
 
 # How to use
 
