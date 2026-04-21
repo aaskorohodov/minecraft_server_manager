@@ -53,7 +53,7 @@ class Storage:
                 del self._tracked_users[user.name]
                 logger.debug(f'User {user.name} is removed from tracked users!')
             else:
-                logger.error(f'User {user.name} was not tracked, no User to delete from _tracked_users!')
+                logger.warning(f'User {user.name} was not tracked, no User to delete from _tracked_users!')
 
             self._not_tracked_users[user.name] = user
 

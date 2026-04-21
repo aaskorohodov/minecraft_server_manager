@@ -278,7 +278,6 @@ class AntiBot:
         for user in tracked_users:
             if user.initial_coordinates:
                 if not self._detector.check_if_coords_are_in_spawn_area(user.initial_coordinates):
-                    logger.info(f'User {user.name} spawned outside spawn area')
                     users_to_untrack.append(user)
                     continue
 
@@ -288,3 +287,17 @@ class AntiBot:
 
         for user in users_to_untrack:
             STORAGE.untrack_user(user)
+
+    def check_forbidden_commands(self,
+                                 command: str,
+                                 user_name: str) -> None:
+        """Checks if command is forbidden
+
+        Args:
+            command: Command that User is trying to execute
+            user_name: Name of the User"""
+
+        command = command.lower()
+        for forbidden_command in settings.antibot.KICK_FOR_COMMANDS:
+            if command in forbidden_command or command == forbidden_command:
+                self._kicker.kick_due_to_forbidden_command(user_name)

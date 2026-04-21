@@ -146,3 +146,22 @@ class LogsExtractor:
         z = int(float(z))
 
         return x, y, z
+
+    @staticmethod
+    def extract_command(server_log: str) -> tuple[str, str]:
+        """Extracts command from servers log
+
+        Args:
+            server_log: Log from server, to extract command from
+        Returns:
+            Command and UserName"""
+
+        # [19:25:45 INFO]: Name issued server command: /plugins
+
+        try:
+            command = server_log.split(' issued server command: /')[-1]
+            user_name = server_log.split(' issued server command: /')[0].split(' INFO]: ')[-1]
+            return command, user_name
+        except Exception as e:
+            logger.exception(e)
+            return '', ''

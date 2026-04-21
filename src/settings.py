@@ -139,6 +139,8 @@ class AntiBotSettings(BaseSettings):
         AGGRESSIVE_BAN_IP_AFTER_IP_KICKED_TIMES: How many kicks should IP get to get banned (entire IP will be banned)
         AGGRESSIVE_RUN_EVERY: RUN_EVERY will be reduced to this number, while aggressive mode is on
 
+        KICK_FOR_COMMANDS: Commands to kick for
+
         KICK_STATIC_IN_SPAWN_POINT_AFTER_SEC: After this many seconds user will be kicked if not moved from spawn point
         KICK_STATIC_IN_SPAWN_AREA_AFTER_SEC: After this many seconds user will be kicked if not left spawn area
         KICK_COOLDOWN_DEFAULT_SECONDS: Default cooldown for kicks
@@ -180,6 +182,18 @@ class AntiBotSettings(BaseSettings):
     ACCEPT_FROM_USERS:                       list[str] = ['Name', 'by_danilov']
     AGGRESSIVE_BAN_IP_AFTER_IP_KICKED_TIMES: int       = 3
     AGGRESSIVE_RUN_EVERY:                    int       = 1
+
+    KICK_FOR_COMMANDS: list[str] = ['plugins',
+                                    'version grimac',
+                                    'ver grimac'
+                                    'bukkit:plugins',
+                                    'bukkit:pl',
+                                    'bukkit:ver',
+                                    'bukkit:version',
+                                    'bukkit:about',
+                                    'minecraft:help',
+                                    'tps',
+                                    'timings']
 
     KICK_STATIC_IN_SPAWN_POINT_AFTER_SEC: int = 60
     KICK_STATIC_IN_SPAWN_AREA_AFTER_SEC:  int = 120

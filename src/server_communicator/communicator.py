@@ -115,6 +115,8 @@ class ServerCommunicator:
         Args:
             clean_line: Log from server"""
 
+        # clean_line = '[19:25:45 INFO]: Name issued server command: /plugins'
+
         try:
             if "UUID of player" in clean_line:
                 user_uuid, user_name = LogsExtractor.extract_uuid_and_name(clean_line)
@@ -136,6 +138,10 @@ class ServerCommunicator:
                     for root_user in settings.antibot.ACCEPT_FROM_USERS:
                         if root_user in clean_line:
                             self.antibot.unban_ips(unban_all=True)
+
+            if ' issued server command: ' in clean_line:
+                command, user_name = LogsExtractor.extract_command(clean_line)
+                self.antibot.check_forbidden_commands(command, user_name)
 
         except Exception as e:
             logger.exception(e)

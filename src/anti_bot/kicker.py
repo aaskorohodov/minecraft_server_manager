@@ -39,6 +39,17 @@ class Kicker:
         command = f'kick {user_name} {reason}\n'
         self._server_comm.send_to_server(command)
 
+    def kick_due_to_forbidden_command(self,
+                                      user_name: str) -> None:
+        """Kicks User due to forbidden command
+
+        Args:
+            user_name: User to kick"""
+
+        user = STORAGE.get_user(user_name)
+        reason = 'No-no-no! This command is forbidden. Dont try this again'
+        self._kick_user(user, reason)
+
     def kick_due_to_login_sanctions(self,
                                     user: 'TrackedUser') -> None:
         """Kicks User on login, as User is not currently allowed to join server
@@ -128,10 +139,11 @@ class Kicker:
     def _kick_user(self,
                    user:                TrackedUser,
                    reason:              str,
-                   login_again_after:   int = settings.antibot.KICK_COOLDOWN_DEFAULT_SECONDS,
+                   login_again_after:   int  = settings.antibot.KICK_COOLDOWN_DEFAULT_SECONDS,
                    add_relogin_extra:   bool = False,
                    update_kick_counter: bool = True,
-                   save_ip:             bool = True) -> None:
+                   save_ip:             bool = True,
+                   untrack:             bool = True) -> None:
         """Kicks users and saves IP of a kicked user
 
         Args:
@@ -140,7 +152,8 @@ class Kicker:
             login_again_after: Seconds to allow user to login again
             add_relogin_extra: If we should add additional several seconds for wait cooldown before relogin
             update_kick_counter: If set to False, kick will be made in soft manner - without updating counter
-            save_ip: If user should be saved in kicked IPs"""
+            save_ip: If user should be saved in kicked IPs
+            untrack: If User need to be untracked"""
 
         logger.info(f'Kicking {user.name}, {reason=}')
         try:
@@ -153,7 +166,8 @@ class Kicker:
             logger.error(f'Was not able to kick user {user.name}')
             logger.exception(e)
 
-        STORAGE.untrack_user(user)
+        if untrack:
+            STORAGE.untrack_user(user)
         if save_ip:
             STORAGE.save_kicked_ip(user)
 
