@@ -298,7 +298,7 @@ class AntiBot:
             user_name: Name of the User"""
 
         command = command.lower()
-        if command == '/':
+        if command.strip() == '/':
             return
         for forbidden_command in settings.antibot.KICK_FOR_COMMANDS:
             if command in forbidden_command or command == forbidden_command:
