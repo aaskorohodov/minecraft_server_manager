@@ -112,13 +112,19 @@ class LogsExtractor:
         Returns:
             Coordinates and user_name, extracted from log"""
 
-        # [13:32:32 INFO]: Teleported Name123 to 5556.500000, 87.000000, -4584.500000'
+        # [13:32:32 INFO]: Teleported Name to 5556.500000, 87.000000, -4584.500000
+        # [13:15:25 INFO]: [Name: Teleported Name to 5556.500000, 87.000000, -4584.500000]
         try:
             coords = clean_line.split(' to ')[-1].strip()
+
+            # 5556.500000, 87.000000, -4584.500000
+            # 5556.500000, 87.000000, -4584.500000]
+            if coords.endswith(']'):
+                coords = coords.replace(']', '')
             # 5556.500000, 87.000000, -4584.500000
 
             user_name = clean_line.split(' to ')[0].split(' Teleported ')[-1].strip()
-            # Name123
+            # Name
 
             return coords, user_name
         except Exception as e:

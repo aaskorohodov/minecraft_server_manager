@@ -244,6 +244,12 @@ class AntiBot:
             logger.error(f'{user_name=} is not found! Kicking')
             self._kicker.kick_by_user_name(user_name)
 
+        if self._detector.check_if_coords_in_spawn_point(coords):
+            logger.info(f'User {user.name} still in Spawn Point')
+        else:
+            if self._detector.check_if_coords_are_in_spawn_area(coords):
+                logger.info(f'User {user.name} still in Spawn Area')
+
         user.last_know_coords = coords
 
     def become_aggressive(self) -> None:
