@@ -184,8 +184,9 @@ class AntiBotSettings(BaseSettings):
     AGGRESSIVE_RUN_EVERY:                    int       = 1
 
     KICK_FOR_COMMANDS: list[str] = ['plugins',
+                                    'pl',
                                     'version grimac',
-                                    'ver grimac'
+                                    'ver grimac',
                                     'bukkit:plugins',
                                     'bukkit:pl',
                                     'bukkit:ver',
