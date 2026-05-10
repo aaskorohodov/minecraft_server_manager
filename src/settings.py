@@ -54,6 +54,7 @@ class PathsSettings(BaseSettings):
     DB:         str       = 'my_shiny.db'
     MESSAGES:   str       = ''
     USERS_DATA: str       = ''
+    BAD_WORDS:  str       = ''
 
 
 class BackupSettings(BaseSettings):
@@ -245,6 +246,8 @@ class Settings(BaseSettings):
     backups:       BackupSettings        = BackupSettings()
     down_detector: DownDetectorSettings  = DownDetectorSettings()
     antibot:       AntiBotSettings       = AntiBotSettings()
+
+    TOXICITY_ON: bool = True
 
 
 logger.info(f'Found config.env at: {find_my_file(CONFIG_FILE_NAME)}')

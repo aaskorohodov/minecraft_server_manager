@@ -105,6 +105,11 @@ class AppInitializer:
             if not os.path.exists(settings.paths.USERS_DATA):
                 logger.warning(f'Path in settings.paths.USERS_DATA ({settings.paths.USERS_DATA}) is invalid!')
 
+        if settings.paths.BAD_WORDS:
+            if not os.path.exists(settings.paths.BAD_WORDS):
+                logger.warning(f'Path in settings.paths.BAD_WORDS ({settings.paths.BAD_WORDS}) is invalid!')
+                settings.TOXICITY_ON = False
+
         if not all_good:
             raise AssertionError('Some paths are invalid! Check settings')
         logger.info('Paths are ok...')

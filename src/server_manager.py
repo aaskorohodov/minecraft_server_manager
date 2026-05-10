@@ -15,6 +15,7 @@ from file_transfer.cleaner import BackupsCleaner
 from initializer.logo_printer import LogoPrinter
 from notifications.notificator import Notificator
 from server_communicator.communicator import ServerCommunicator
+from toxicity_manager.manager import ToxicityManager
 
 
 class MinecraftServerManager:
@@ -166,6 +167,10 @@ class MinecraftServerManager:
             self._server_comm.antibot = self._anti_bot
         else:
             logger.warning('Antibot if off')
+
+        if settings.TOXICITY_ON:
+            toxicity = ToxicityManager(self._server_comm)
+            self._server_comm.toxicity = toxicity
 
         logger.info("Server started")
 

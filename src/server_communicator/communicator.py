@@ -8,6 +8,7 @@ from queue import Queue, Empty
 from settings import settings
 from anti_bot.anti_bot import AntiBot
 from notifications.notificator import Notificator
+from toxicity_manager.manager import ToxicityManager
 from server_communicator.logs_extractor import LogsExtractor
 
 
@@ -22,16 +23,20 @@ class ServerCommunicator:
 
     def __init__(self,
                  server_proc: subprocess.Popen,
-                 antibot: Optional[AntiBot] = None):
+                 antibot: Optional[AntiBot] = None,
+                 toxicity: Optional[ToxicityManager] = None):
         """Init
 
         Args:
             server_proc: Process with java-server
-            antibot: Instance of AntiBot to track bots"""
+            antibot: Instance of AntiBot to track bots
+            toxicity: Instance of toxicity manager"""
 
         self.server_proc:  subprocess.Popen  = server_proc
         self.notificator:  Notificator       = Notificator()
         self.antibot:      Optional[AntiBot] = antibot
+
+        self.toxicity: Optional[ToxicityManager] = toxicity
 
         self._output_queue: Queue           = Queue(maxsize=10000)
         self._stop_event:   threading.Event = threading.Event()
@@ -107,6 +112,11 @@ class ServerCommunicator:
 
         if settings.antibot.ON:
             self._check_antibot_events(line)
+
+        if settings.TOXICITY_ON and self.toxicity:
+            user_name, message = LogsExtractor.extract_message(line)
+            if user_name and message:
+                self.toxicity.check_text(message, user_name)
 
     def _check_antibot_events(self,
                               clean_line: str) -> None:

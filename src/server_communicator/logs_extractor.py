@@ -171,3 +171,29 @@ class LogsExtractor:
         except Exception as e:
             logger.exception(e)
             return '', ''
+
+    @staticmethod
+    def extract_message(msg: str) -> tuple[str, str]:
+        """Extracts message and user-name
+
+        Args:
+            msg: Message from server
+        Returns:
+            user_name and text"""
+
+        try:
+            # [17:44:55 INFO]: [Not Secure] <Name> some text
+            if ' [Not Secure] ' in msg:
+                # <Name> some text
+                right_part = msg.split(' [Not Secure] ')[-1]
+                # Name
+                user_name = right_part.split('> ')[0].replace('<', '').strip()
+
+                # some text
+                text = right_part.split('> ')[-1].strip()
+                return user_name, text
+            else:
+                return '', ''
+        except Exception as e:
+            logger.exception(e)
+            return '', ''
